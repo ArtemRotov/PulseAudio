@@ -1,30 +1,54 @@
-QT       += core gui network
+TEMPLATE = app
+TARGET   = RadioSim
 
+CONFIG += c++14
+
+QT += core gui network
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += multimedia
 
-CONFIG += c++11
+#DEFINES +=
+#INCLUDEPATH += . ..
 
-# You can make your code fail to compile if it uses deprecated APIs.
-# In order to do so, uncomment the following line.
-#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+DEPENDPATH += .
 
-SOURCES += \
-    NetSocket.cpp \
-    examplePCMPlayback.cpp \
-    main.cpp \
- #   main2.cpp \
-    mainwindow.cpp
+MY_TMP_DIR = $$PWD/tmp/$${TARGET}/
+MY_BIN_DIR = $$PWD/bin/
+#MY_LIB_DIR =
 
-HEADERS += \
-    NetSocket.h \
-    mainwindow.h
+OBJECTS_DIR = $${MY_TMP_DIR}$${MY_CONFIG}$${MY_TOOLSET}$${MY_PLATFORM}
+MOC_DIR     = $${MY_TMP_DIR}moc/
+RCC_DIR     = $${MY_TMP_DIR}rcc/
+UI_DIR      = $${MY_TMP_DIR}uic/
+
+#contains(CONFIG, staticlib) {
+#  DESTDIR   = $${MY_LIB}
+#} else {
+DESTDIR   = $${MY_BIN_DIR}$${MY_CONFIG}$${MY_TOOLSET}$${MY_PLATFORM}
+#}
+
+INCLUDEPATH += $${UI_DIR}
+INCLUDEPATH += $${MOC_DIR}
+
+
+LIBS += -lpulse
+LIBS += -lpulse-simple
+
+HEADERS +=                              \
+    $$PWD/Network/NetSocket.h           \
+    $$PWD/Gui/mainwindow.h
+
+SOURCES +=                              \
+    $$PWD/Network/NetSocket.cpp         \
+    $$PWD/Gui/mainwindow.cpp            \
+    $$PWD/Audio/examplePCMPlayback.cpp  \
+    $$PWD/Audio/main2.cpp               \
+    $$PWD/main.cpp
+
 
 FORMS += \
-    mainwindow.ui
+    $$PWD/Gui/mainwindow.ui
 
-LIBS += -lpulse -lpulse-simple
 
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+
+
