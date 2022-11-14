@@ -1,17 +1,17 @@
 #include <QObject>
+#include <QUdpSocket>
 
-
-class QUdpSocket;
 
 class NetSocket : public QObject
 {
     Q_OBJECT
 
 public:
-    NetSocket();
+    NetSocket(const QString &addr, int port);
     ~NetSocket();
 
-    void send();
+    qint64 send(char* data, qint64 len, const QString &addr, int port);
+    qint64 read(char* data, qint64 maxlen);
 
 private slots:
     void onSockConnected();
@@ -21,7 +21,8 @@ private slots:
 
 private:
     QUdpSocket* m_sock;
-
+    int         m_port;
+    QString     m_addr;
 };
 
 

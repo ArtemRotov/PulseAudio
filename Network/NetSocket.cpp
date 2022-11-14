@@ -1,40 +1,23 @@
 #include "NetSocket.h"
-#include <QTcpSocket>
-#include <QUdpSocket>
+
 #include <QDebug>
 #include <iostream>
 #include <QThread>
 
 
-#define SENDER
-
-const QString   SENDER_ADDR = "127.0.0.1";
-const int       SENDER_PORT = 1236;
-
-const QString RECIEVER_ADDR = "127.0.0.1";
-const int     RECIEVER_PORT = 1235;
-
-
-NetSocket::NetSocket()
+NetSocket::NetSocket(const QString &addr, int port)
     : m_sock(new QUdpSocket(this))
+    , m_port(port)
+    , m_addr(addr)
 {
-    connect(m_sock, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error), this, &NetSocket::error);
+    //connect(m_sock, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error), this, &NetSocket::error);
 
-#ifdef SENDER
-    if (m_sock->bind(QHostAddress(SENDER_ADDR), SENDER_PORT ) > 0 )
-        ;
+    if (m_sock->bind(QHostAddress(m_addr), m_port ) > 0 )
+        qDebug() << "Bind successfull";
     else
         qDebug() << "Bind failed";
-#else
-    if (m_sock->bind(QHostAddress(RECIEVER_ADDR), RECIEVER_PORT ) > 0 )
-        ;
-    else
-        qDebug() << "Bind failed";
-#endif
 
     connect(m_sock, SIGNAL(readyRead()), this, SLOT(readyRead()));
-     //connect(m_sock, &QUdpSocket::readyRead, this, &NetSocket::onSockReadyRead);
-
 }
 
 NetSocket::~NetSocket()
@@ -42,27 +25,29 @@ NetSocket::~NetSocket()
     delete m_sock;
 }
 
-void NetSocket::send()
+qint64 NetSocket::send(char* data, qint64 len, const QString &addr, int port)
 {
-    #ifdef SENDER
-    while(true)
-    {
-        static int iter = 0;
-        QThread::msleep(50);
-        QByteArray Data;
-        Data.append("Hello from UDP " + QString::number(iter));
-        //Data.append("Hello from UDP");
-        //m_sock->writeDatagram(Data, QHostAddress("192.9.206.60"), 1233);
-        m_sock->writeDatagram(Data, QHostAddress(RECIEVER_ADDR), RECIEVER_PORT);
-        iter++;
-        qDebug() <<"mail sended............";
-    }
-    #endif
+    QByteArray datagram = data;
+    QThread::msleep(50);
+    //Data.append("Hello from UDP");
+    auto res = m_sock->writeDatagram(datagram, len, QHostAddress(addr),port);
+
+    qDebug() << "sended " << res << "bytes to " << addr << ":" << port;
+
+    return res;
 }
 
 void NetSocket::onSockConnected()
 {
     qDebug() << "Connected";
+}
+
+qint64 NetSocket::read(char *data, qint64 maxlen)
+{
+    qint64 res = m_sock->readDatagram(data, maxlen);
+    qDebug() << "readed " << res;
+    return res;
+
 }
 
 void NetSocket::readyRead()
@@ -83,10 +68,10 @@ void NetSocket::readyRead()
     m_sock->readDatagram(buffer.data(), buffer.size(),
                          &sender, &senderPort);
 
-    qDebug() << "Message from: " << sender.toString();
-    qDebug() << "Message port: " << senderPort;
-    qDebug() << "Message: " << buffer;
-    qDebug() << "-----------------------------";
+//    qDebug() << "Message from: " << sender.toString();
+//    qDebug() << "Message port: " << senderPort;
+//    qDebug() << "Message: " << buffer;
+//    qDebug() << "-----------------------------";
 }
 
 void NetSocket::onSockDisconnected()
