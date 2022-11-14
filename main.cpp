@@ -5,12 +5,13 @@
 #include <vector>
 #include <queue>
 #include <QThread>
-
+#include <mutex>
 #include <pulse/pulseaudio.h>
 
 #define RATE 48000
 
 pa_threaded_mainloop *mloop = pa_threaded_mainloop_new();
+std::mutex mut;
 std::queue<uint8_t> vecData;
 
 void stream_state_cb(pa_stream *s, void *mainloop);
@@ -59,6 +60,7 @@ void on_dev_source(pa_context *c, const pa_source_info *info, int eol, void *uda
 
 void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 {
+    std::lock_guard<std::mutex> lock (mut);
     static int i = 1;
     qDebug() << "write call " << i++ ;
 
@@ -82,13 +84,18 @@ void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
                 buffer[i] = 0x0;
         }
         //TODO pa_xfree (pulse/xmalloc);
+        //pa_stream_write(stream, buffer, bytes_to_fill, pa_xfree, 0, PA_SEEK_RELATIVE);
         pa_stream_write(stream, buffer, bytes_to_fill, NULL, 0, PA_SEEK_RELATIVE);
         bytes_remaining -= bytes_to_fill;
     }
+    //qDebug() << vecData.size();
 }
 
 void on_i_complete(pa_stream *stream, size_t nbytes, void *udata)
 {
+    std::lock_guard<std::mutex> lock (mut);
+    static int i = 1;
+    qDebug() << "read call " << i++ ;
     while (true)
     {
         const void* data;
@@ -106,13 +113,15 @@ void on_i_complete(pa_stream *stream, size_t nbytes, void *udata)
             uint8_t* ptr = (uint8_t*)data;
             for (int i = 0; i < n; ++i)
             {
-                vecData.push(ptr[i]);
+                if (ptr[i] != 0x0)
+                    vecData.push(ptr[i]);
             }
 
-            qDebug() << vecData.size();
+            //qDebug() << vecData.size();
         }
               pa_stream_drop(stream);
     }
+    //qDebug() << vecData.size();
 }
 
 
@@ -212,7 +221,7 @@ int main(int argc, char *argv[])
         }
         pa_threaded_mainloop_wait(mloop);
     }
-    pa_stream_flush(stream,0,nullptr);
+    //pa_stream_flush(stream,0,nullptr);
     while (true)
     {
         int r = pa_stream_get_state(stream);
@@ -225,35 +234,6 @@ int main(int argc, char *argv[])
         }
         pa_threaded_mainloop_wait(mloop);
     }
-
-//    pa_stream *streamOut = pa_stream_new(ctx, "MyAudioProjectOut", &spec, &map);
-//    void* dataOut = nullptr;
-//    pa_stream_set_write_callback(streamOut, on_o_complete, mloop);
-//    pa_stream_set_state_callback(streamOut, stream_state_cb, mloop);
-//    pa_stream_connect_playback(streamOut, device_id, &attr, stream_flags, nullptr, nullptr);
-
-//    while (true)
-//    {
-//        int r = pa_stream_get_state(streamOut);
-//        if (r == PA_STREAM_READY)
-//            break;
-//        else if (r == PA_STREAM_FAILED)
-//        {
-//            qDebug() << "PA_STREAM_FAILED";
-//            return 0;
-//        }
-//        pa_threaded_mainloop_wait(mloop);
-//    }
-
-
-    pa_threaded_mainloop_unlock(mloop); //
-    //pa_stream_cork(streamOut, 0, 0, mloop);
-    qDebug() << "start recording";
-    QThread::sleep(1);
-    qDebug() << "stop recording";
-    pa_threaded_mainloop_lock(mloop); //
-    pa_stream_disconnect(stream);
-    pa_stream_unref(stream);
 
     pa_stream *streamOut = pa_stream_new(ctx, "MyAudioProjectOut", &spec, &map);
     void* dataOut = nullptr;
@@ -273,8 +253,43 @@ int main(int argc, char *argv[])
         }
         pa_threaded_mainloop_wait(mloop);
     }
+
+
+    pa_threaded_mainloop_unlock(mloop);
+
+    qDebug() << "START WORKING";
     pa_stream_cork(streamOut, 0, 0, mloop);
-    pa_threaded_mainloop_unlock(mloop); //
+    pa_stream_trigger(streamOut,NULL,NULL);
+    while(true)
+    {
+
+    }
+    qDebug() << "STOP WORKING";
+    pa_stream_cork(streamOut, 1, 0, mloop);
+    pa_threaded_mainloop_lock(mloop); //
+    pa_stream_disconnect(stream);
+    pa_stream_unref(stream);
+
+//    pa_stream *streamOut = pa_stream_new(ctx, "MyAudioProjectOut", &spec, &map);
+//    void* dataOut = nullptr;
+//    pa_stream_set_write_callback(streamOut, on_o_complete, mloop);
+//    pa_stream_set_state_callback(streamOut, stream_state_cb, mloop);
+//    pa_stream_connect_playback(streamOut, device_id, &attr, stream_flags, nullptr, nullptr);
+
+//    while (true)
+//    {
+//        int r = pa_stream_get_state(streamOut);
+//        if (r == PA_STREAM_READY)
+//            break;
+//        else if (r == PA_STREAM_FAILED)
+//        {
+//            qDebug() << "PA_STREAM_FAILED";
+//            return 0;
+//        }
+//        pa_threaded_mainloop_wait(mloop);
+//    }
+//    pa_stream_cork(streamOut, 0, 0, mloop);
+//    pa_threaded_mainloop_unlock(mloop); //
 
 
     QThread::sleep(6);
@@ -286,7 +301,6 @@ int main(int argc, char *argv[])
 
     pa_context_disconnect(ctx);
     pa_context_unref(ctx);
-    //pa_threaded_mainloop_unlock(mloop); //
     pa_threaded_mainloop_stop(mloop); //
     pa_threaded_mainloop_free(mloop); //
     return 0;
