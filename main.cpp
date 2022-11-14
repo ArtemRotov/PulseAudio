@@ -59,6 +59,9 @@ void on_dev_source(pa_context *c, const pa_source_info *info, int eol, void *uda
 
 void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 {
+    static int i = 1;
+    qDebug() << "write call " << i++ ;
+
     size_t bytes_remaining = requested_bytes;
 
     while (bytes_remaining > 0)
@@ -78,6 +81,7 @@ void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
             else
                 buffer[i] = 0x0;
         }
+        //TODO pa_xfree (pulse/xmalloc);
         pa_stream_write(stream, buffer, bytes_to_fill, NULL, 0, PA_SEEK_RELATIVE);
         bytes_remaining -= bytes_to_fill;
     }
