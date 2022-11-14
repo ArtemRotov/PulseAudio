@@ -126,6 +126,8 @@ void stream_state_cb(pa_stream *s, void *mainloop)
 
 int main(int argc, char *argv[])
 {
+    Q_UNUSED(argc);
+    Q_UNUSED(argv);
 
     pa_threaded_mainloop_lock(mloop);
     pa_threaded_mainloop_start(mloop);
@@ -162,13 +164,13 @@ int main(int argc, char *argv[])
     }
     pa_operation_unref(operationSource);
 
+
+
+    // [1] Настройка каналов
     pa_sample_spec spec;
     spec.format = PA_SAMPLE_U8;
     spec.rate = RATE;
     spec.channels = 2;
-    auto rr1 = pa_bytes_per_second(&spec);
-    auto rr2 = pa_usec_to_bytes(1000000,&spec);
-    auto rr3 = pa_bytes_to_usec(1800,&spec);
     pa_channel_map map;     //Тут смотреть левый правый похоже
     pa_channel_map_init_stereo(&map);
     map.map[0] = PA_CHANNEL_POSITION_FRONT_LEFT;   //PA_CHANNEL_POSITION_FRONT_LEFT
@@ -185,6 +187,8 @@ int main(int argc, char *argv[])
     pa_stream_flags_t stream_flags = pa_stream_flags_t(PA_STREAM_START_CORKED | PA_STREAM_INTERPOLATE_TIMING |
     PA_STREAM_NOT_MONOTONIC | PA_STREAM_AUTO_TIMING_UPDATE |
     PA_STREAM_ADJUST_LATENCY);
+
+    // [1]
 
     void* dataRecord = nullptr;
     const char *device_id = nullptr;
