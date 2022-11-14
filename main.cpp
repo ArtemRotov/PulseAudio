@@ -12,7 +12,7 @@
 
 pa_threaded_mainloop *mloop = pa_threaded_mainloop_new();
 pa_threaded_mainloop *mloop2 = pa_threaded_mainloop_new();
-NetSocket* sock = new NetSocket("127.0.0.1", 1234);
+NetSocket* sock = new NetSocket("192.9.206.60", 1234);
 
 std::mutex mut;
 std::queue<uint8_t> vecData;
@@ -89,36 +89,38 @@ void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
     //qDebug() <<QThread::currentThreadId();
 
 
-    char buf[1024];
-    size_t res = -1;
-    if ((res = sock->read(buf, 1024)) != -1)
-    {
-        pa_stream_begin_write(stream, (void**) &buf, &res);
-        pa_stream_write(stream, buf, res, NULL, 0, PA_SEEK_RELATIVE);
-        return;
-    }
-    else
-        return;
+    char buf[2048];
+    int64_t res = sock->read(buf, 2048);
 
     size_t bytes_remaining = requested_bytes;
 
     while (bytes_remaining > 0)
     {
-        uint8_t *buffer = nullptr;
+        char *buffer = nullptr;
         size_t bytes_to_fill = RATE;
         if (bytes_to_fill > bytes_remaining) bytes_to_fill = bytes_remaining;
         pa_stream_begin_write(stream, (void**) &buffer, &bytes_to_fill);
 
         for (size_t i = 0; i < bytes_to_fill; ++i)
         {
-            if (!vecData.empty())
+            if (res != -1 && i < 1024)
             {
-                buffer[i] = vecData.front();
-                vecData.pop();
+                buffer[i] = buf[i];
             }
-            else
-                buffer[i] = 0x0;
+//            else
+//                buffer[i] = 0x0;
         }
+
+//        for (size_t i = 0; i < bytes_to_fill; ++i)
+//        {
+//            if (!vecData.empty())
+//            {
+//                buffer[i] = vecData.front();
+//                vecData.pop();
+//            }
+//            else
+//                buffer[i] = 0x0;
+//        }
 
         //qDebug() << vecData.size();
 
@@ -149,8 +151,9 @@ void on_i_complete(pa_stream *stream, size_t nbytes, void *udata)
         }
         else
         {
-            char* ptr = (char*)data;
-            sock->send(ptr,1024,"127.0.0.1", 1234);
+            void* ptr = (char*)data;
+            int count = (n / 1024) + 1;
+            sock->send(ptr,1024 * count,"192.9.206.60", 1234);
 
 
 //            uint8_t* ptr = (uint8_t*)data;
@@ -186,6 +189,12 @@ int main(int argc, char *argv[])
 
     Q_UNUSED(argc);
     Q_UNUSED(argv);
+
+
+    NetSocket s1("192.9.206.60", 1122);
+    char buf[1024];
+    char buf2[4096];
+
 
     pa_threaded_mainloop_lock(mloop);
     pa_threaded_mainloop_start(mloop);

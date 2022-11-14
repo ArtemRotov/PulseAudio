@@ -25,12 +25,9 @@ NetSocket::~NetSocket()
     delete m_sock;
 }
 
-qint64 NetSocket::send(char* data, qint64 len, const QString &addr, int port)
+qint64 NetSocket::send(void* data, qint64 len, const QString &addr, int port)
 {
-    QByteArray datagram = data;
-    QThread::msleep(50);
-    //Data.append("Hello from UDP");
-    auto res = m_sock->writeDatagram(datagram, len, QHostAddress(addr),port);
+    auto res = m_sock->writeDatagram((char*)data, len, QHostAddress(addr),port);
 
     qDebug() << "sended " << res << "bytes to " << addr << ":" << port;
 

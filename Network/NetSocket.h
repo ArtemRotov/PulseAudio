@@ -10,7 +10,7 @@ public:
     NetSocket(const QString &addr, int port);
     ~NetSocket();
 
-    qint64 send(char* data, qint64 len, const QString &addr, int port);
+    qint64 send(void* data, qint64 len, const QString &addr, int port);
     qint64 read(char* data, qint64 maxlen);
 
 private slots:
