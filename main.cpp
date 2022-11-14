@@ -10,9 +10,10 @@
 #include <Network/NetSocket.h>
 #define RATE 48000
 
+
 pa_threaded_mainloop *mloop = pa_threaded_mainloop_new();
 pa_threaded_mainloop *mloop2 = pa_threaded_mainloop_new();
-NetSocket* sock = new NetSocket("192.9.206.60", 1234);
+NetSocket* sock = new NetSocket("192.168.0.102", 1234);
 
 std::mutex mut;
 std::queue<uint8_t> vecData;
@@ -86,44 +87,16 @@ void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 {
     static int k = 1;
     qDebug()<< "Write call " << k++;
-    //qDebug() <<QThread::currentThreadId();
-
-
-    char buf[2048];
-    int64_t res = sock->read(buf, 2048);
 
     size_t bytes_remaining = requested_bytes;
 
     while (bytes_remaining > 0)
     {
         char *buffer = nullptr;
-        size_t bytes_to_fill = RATE;
+        size_t bytes_to_fill = 1024;
         if (bytes_to_fill > bytes_remaining) bytes_to_fill = bytes_remaining;
         pa_stream_begin_write(stream, (void**) &buffer, &bytes_to_fill);
-
-        for (size_t i = 0; i < bytes_to_fill; ++i)
-        {
-            if (res != -1 && i < 1024)
-            {
-                buffer[i] = buf[i];
-            }
-//            else
-//                buffer[i] = 0x0;
-        }
-
-//        for (size_t i = 0; i < bytes_to_fill; ++i)
-//        {
-//            if (!vecData.empty())
-//            {
-//                buffer[i] = vecData.front();
-//                vecData.pop();
-//            }
-//            else
-//                buffer[i] = 0x0;
-//        }
-
-        //qDebug() << vecData.size();
-
+        int64_t res = sock->read(buffer, bytes_to_fill);
         pa_stream_write(stream, buffer, bytes_to_fill, NULL, 0, PA_SEEK_RELATIVE);
         bytes_remaining -= bytes_to_fill;
     }
@@ -131,9 +104,8 @@ void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 
 void on_i_complete(pa_stream *stream, size_t nbytes, void *udata)
 {
-    static int k = 1;
-    qDebug()<< "Read call " << k++;
-    //qDebug() <<QThread::currentThreadId();
+//    static int k = 1;
+//    qDebug()<< "Read call " << k++;
     while (true)
     {
         const void* data;
@@ -151,23 +123,18 @@ void on_i_complete(pa_stream *stream, size_t nbytes, void *udata)
         }
         else
         {
-            void* ptr = (char*)data;
-            int count = (n / 1024) + 1;
-            sock->send(ptr,1024 * count,"192.9.206.60", 1234);
+            char* ptr = (char*)data;
 
-
-//            uint8_t* ptr = (uint8_t*)data;
-//            for (int i = 0; i < n; ++i)
-//            {
-//                if (ptr[i] != 0x0)
-//                {
-//                    std::lock_guard<std::mutex> lock(mut);
-//                    vecData.push(ptr[i]);
-//                }
-//            }
-            //qDebug() << vecData.size();
+            for (int i = 0; i < n;)
+            {
+                int bytes = ((n - i) < 1024) ? n - i : 1024;
+                sock->send((void*)ptr,bytes,"192.168.0.102", 1234);
+                i += bytes;
+                ptr = ptr + bytes;
+            }
         }
-              pa_stream_drop(stream);
+
+        pa_stream_drop(stream);
     }
 }
 
@@ -189,12 +156,6 @@ int main(int argc, char *argv[])
 
     Q_UNUSED(argc);
     Q_UNUSED(argv);
-
-
-    NetSocket s1("192.9.206.60", 1122);
-    char buf[1024];
-    char buf2[4096];
-
 
     pa_threaded_mainloop_lock(mloop);
     pa_threaded_mainloop_start(mloop);

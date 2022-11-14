@@ -29,7 +29,7 @@ qint64 NetSocket::send(void* data, qint64 len, const QString &addr, int port)
 {
     auto res = m_sock->writeDatagram((char*)data, len, QHostAddress(addr),port);
 
-    qDebug() << "sended " << res << "bytes to " << addr << ":" << port;
+    //qDebug() << "sended " << res << "bytes to " << addr << ":" << port;
 
     return res;
 }
@@ -42,7 +42,7 @@ void NetSocket::onSockConnected()
 qint64 NetSocket::read(char *data, qint64 maxlen)
 {
     qint64 res = m_sock->readDatagram(data, maxlen);
-    qDebug() << "readed " << res;
+    //qDebug() << "readed " << res;
     return res;
 
 }
