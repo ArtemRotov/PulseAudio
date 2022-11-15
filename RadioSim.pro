@@ -43,11 +43,14 @@ SOURCES +=                              \
     $$PWD/Gui/mainwindow.cpp            \
     $$PWD/Audio/examplePCMPlayback.cpp  \
     $$PWD/Audio/main2.cpp               \
-    $$PWD/main.cpp
+    $$PWD/main.cpp \
+    PA_DocumentationTranslate.cpp
 
 
 FORMS += \
     $$PWD/Gui/mainwindow.ui
+
+DISTFILES +=
 
 
 

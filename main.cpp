@@ -10,10 +10,15 @@
 #include <Network/NetSocket.h>
 #define RATE 48000
 
+#define addr addr_work
+const QString addr_work = "192.9.206.60";
+const QString addr_home = "192.168.0.102";
+
 
 pa_threaded_mainloop *mloop = pa_threaded_mainloop_new();
 pa_threaded_mainloop *mloop2 = pa_threaded_mainloop_new();
-NetSocket* sock = new NetSocket("192.168.0.102", 1234);
+NetSocket* sock = new NetSocket(addr, 1234);
+
 
 std::mutex mut;
 std::queue<uint8_t> vecData;
@@ -85,6 +90,7 @@ void on_state_change2(pa_context *context, void *userdata)
 
 void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 {
+    qDebug() << "requested bytes  = " << requested_bytes;
     static int k = 1;
     qDebug()<< "Write call " << k++;
 
@@ -96,16 +102,29 @@ void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
         size_t bytes_to_fill = 1024;
         if (bytes_to_fill > bytes_remaining) bytes_to_fill = bytes_remaining;
         pa_stream_begin_write(stream, (void**) &buffer, &bytes_to_fill);
+        //memset(buffer, 1, bytes_to_fill);
         int64_t res = sock->read(buffer, bytes_to_fill);
-        pa_stream_write(stream, buffer, bytes_to_fill, NULL, 0, PA_SEEK_RELATIVE);
+        pa_stream_write(stream, buffer, bytes_to_fill, nullptr, 0, PA_SEEK_RELATIVE);
         bytes_remaining -= bytes_to_fill;
     }
+
+//    size_t bytes_to_fill = 1024;
+//    char *buffer = nullptr;
+//    int64_t res = sock->read(buffer, bytes_to_fill);
+//    if (res == -1)
+//    {
+//        return;
+//    }
+
+//    pa_stream_begin_write(stream, (void**) &buffer, &bytes_to_fill);
+//    pa_stream_write(stream, buffer, bytes_to_fill, NULL, 0, PA_SEEK_RELATIVE);
 }
 
 void on_i_complete(pa_stream *stream, size_t nbytes, void *udata)
 {
 //    static int k = 1;
 //    qDebug()<< "Read call " << k++;
+
     while (true)
     {
         const void* data;
@@ -124,11 +143,11 @@ void on_i_complete(pa_stream *stream, size_t nbytes, void *udata)
         else
         {
             char* ptr = (char*)data;
-
+            qDebug() << "Can read " << n;
             for (int i = 0; i < n;)
             {
                 int bytes = ((n - i) < 1024) ? n - i : 1024;
-                sock->send((void*)ptr,bytes,"192.168.0.102", 1234);
+                sock->send((void*)ptr,bytes, addr, 1234);
                 i += bytes;
                 ptr = ptr + bytes;
             }
@@ -139,11 +158,11 @@ void on_i_complete(pa_stream *stream, size_t nbytes, void *udata)
 }
 
 
-//void on_op_complete(pa_stream *s, int success, void *udata)
-//{
-//    pa_threaded_mainloop_signal(mloop, 0);
-//    qDebug() << "on_op_complete";
-//}
+void on_op_complete(pa_stream *s, int success, void *udata)
+{
+    pa_threaded_mainloop_signal(mloop2, 0);
+    qDebug() << "on_op_complete";
+}
 
 void stream_state_cb(pa_stream *s, void *mainloop)
 {
@@ -153,7 +172,6 @@ void stream_state_cb(pa_stream *s, void *mainloop)
 
 int main(int argc, char *argv[])
 {
-
     Q_UNUSED(argc);
     Q_UNUSED(argv);
 
@@ -218,14 +236,28 @@ int main(int argc, char *argv[])
 
     pa_buffer_attr attr;
     attr.maxlength = (uint32_t) -1;
-    attr.tlength = (uint32_t) -1;
+    attr.tlength = 1024;
     attr.prebuf = (uint32_t) -1;
     attr.minreq = (uint32_t) -1;
-    attr.fragsize = (uint32_t) -1;
+    attr.fragsize = 1024;
+
+
+    pa_buffer_attr attrRead;
+    attrRead.maxlength = (uint32_t) -1;
+    attrRead.tlength = (uint32_t) -1;
+    attrRead.prebuf = (uint32_t) -1;
+    attrRead.minreq = (uint32_t) -1;
+    attrRead.fragsize = 2048;
+
+    pa_buffer_attr attrOut;
+    attrOut.maxlength = (uint32_t) -1;
+    attrOut.tlength = 2048;
+    attrOut.prebuf = (uint32_t) -1;
+    attrOut.minreq = (uint32_t) -1;
+    attrOut.fragsize = (uint32_t) -1;
 
     pa_stream_flags_t stream_flags = pa_stream_flags_t(PA_STREAM_START_CORKED | PA_STREAM_INTERPOLATE_TIMING |
-    PA_STREAM_NOT_MONOTONIC | PA_STREAM_AUTO_TIMING_UPDATE |
-    PA_STREAM_ADJUST_LATENCY);
+    PA_STREAM_NOT_MONOTONIC | PA_STREAM_AUTO_TIMING_UPDATE | PA_STREAM_ADJUST_LATENCY);
 
     const char *device_id = nullptr;
     // [1]
@@ -235,7 +267,7 @@ int main(int argc, char *argv[])
     void* dataRead = nullptr;
     pa_stream_set_state_callback(stream, stream_state_cb, mloop);
     pa_stream_set_read_callback(stream, on_i_complete, dataRead);
-    if (pa_stream_connect_record(stream, device_id, &attr, PA_STREAM_NOFLAGS) != 0)
+    if (pa_stream_connect_record(stream, device_id, &attr, PA_STREAM_ADJUST_LATENCY) != 0)
         return -5; //not success
     while (true)
     {
@@ -268,19 +300,22 @@ int main(int argc, char *argv[])
         pa_threaded_mainloop_wait(mloop2);
     }
 
-    pa_threaded_mainloop_unlock(mloop2);
-    pa_stream_cork(streamOut, 0, 0, mloop2);
     pa_threaded_mainloop_unlock(mloop);
+    pa_threaded_mainloop_unlock(mloop2);
+    QThread::usleep(100);
+    pa_stream_cork(streamOut, 0, 0, mloop2);
+
 
 
     qDebug() << "START WORKING";
 
     while(true)
     {
-
+//        QThread::sleep(5);
+//        return 0;
     }
     qDebug() << "STOP WORKING";
-    pa_stream_cork(streamOut, 1, 0, mloop);
+   // pa_stream_cork(streamOut, 1, 0, mloop);
     pa_threaded_mainloop_lock(mloop); //
     pa_stream_disconnect(stream);
     pa_stream_unref(stream);
@@ -307,7 +342,7 @@ int main(int argc, char *argv[])
 //    pa_threaded_mainloop_unlock(mloop); //
 
 
-    QThread::sleep(6);
+
 
     pa_stream_cork(streamOut, 1, 0, mloop);
 
