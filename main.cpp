@@ -69,13 +69,13 @@ void on_state_change1(pa_context *context, void *userdata)
 
 void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 {
-        static int k = 1;
-        qDebug()<< "Write call " << k++;
+//        static int k = 1;
+//        qDebug()<< "Write call " << k++;
     std::unique_lock<std::mutex> lock(mutexMainBuff);
 
     if (lenMainBuff == 0)
         return;
-
+    qDebug() << "Writed " << lenMainBuff << "bytes, when i can write only " << requested_bytes <<" bytes";
     size_t bytesToFill = lenMainBuff;
     uint8_t buffer[bytesToFill];
 
@@ -83,13 +83,13 @@ void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 
     lenMainBuff = 0;
 
-    lock.unlock();
+    //lock.unlock();
 
     if (bytesToFill > requested_bytes)  bytesToFill = requested_bytes;
 
     pa_stream_begin_write(stream, (void**) &buffer, &bytesToFill);
     pa_stream_write(stream, buffer, bytesToFill, nullptr, 0, PA_SEEK_RELATIVE);
-    qDebug() << "writed " << bytesToFill;
+    //qDebug() << "writed " << bytesToFill;
 
 
 
@@ -143,12 +143,12 @@ void on_i_complete(pa_stream *stream, size_t nbytes, void *udata)
         }
         else
         {
-            char* ptr = (char*)data;
-            qDebug() << "Can read " << n;
+            uint8_t* ptr = (uint8_t*)data;
             for (int i = 0; i < n;)
             {
                 int bytes = ((n - i) < 1024) ? n - i : 1024;
                 sock->send((void*)ptr,bytes, addr, 1234);
+                qDebug() << "Sended " << bytes << " bytes";
                 i += bytes;
                 ptr = ptr + bytes;
             }

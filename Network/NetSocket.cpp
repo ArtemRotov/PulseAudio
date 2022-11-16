@@ -49,7 +49,7 @@ void NetSocket::readyRead()
     buffer.resize(1024);
 
     int len  = m_sock->readDatagram(buffer.data(), buffer.size());
-
+    qDebug() << "Readed " << len << " bytes (and removed old)";
     if (len < 0)
         return;
 
@@ -57,7 +57,7 @@ void NetSocket::readyRead()
     lenMainBuff = len;
     delete [] mainBuff;
     mainBuff = new uint8_t[lenMainBuff];
-    memcpy(mainBuff, (void*)buffer.data(), lenMainBuff);
+    memcpy(mainBuff, buffer.data(), lenMainBuff);
 }
 
 void NetSocket::error(QAbstractSocket::SocketError err )
