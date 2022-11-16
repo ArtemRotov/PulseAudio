@@ -3,21 +3,24 @@
 #include <QDebug>
 #include <iostream>
 #include <QThread>
+#include <mutex>
 
+extern uint8_t* mainBuff;
+extern std::mutex mutexMainBuff;
+extern uint32_t lenMainBuff;
 
 NetSocket::NetSocket(const QString &addr, int port)
     : m_sock(new QUdpSocket(this))
     , m_port(port)
     , m_addr(addr)
 {
-    //connect(m_sock, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error), this, &NetSocket::error);
-
     if (m_sock->bind(QHostAddress(m_addr), m_port ) > 0 )
         qDebug() << "Bind successfull";
     else
         qDebug() << "Bind failed";
-
-    connect(m_sock, SIGNAL(readyRead()), this, SLOT(readyRead()));
+    connect(m_sock, &QUdpSocket::readyRead, this, &NetSocket::readyRead);
+    connect(m_sock, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error), this, &NetSocket::error);
+    qDebug() << m_sock->state();
 }
 
 NetSocket::~NetSocket()
@@ -28,15 +31,7 @@ NetSocket::~NetSocket()
 qint64 NetSocket::send(void* data, qint64 len, const QString &addr, int port)
 {
     auto res = m_sock->writeDatagram((char*)data, len, QHostAddress(addr),port);
-
-    //qDebug() << "sended " << res << "bytes to " << addr << ":" << port;
-
     return res;
-}
-
-void NetSocket::onSockConnected()
-{
-    qDebug() << "Connected";
 }
 
 qint64 NetSocket::read(char *data, qint64 maxlen)
@@ -49,34 +44,23 @@ qint64 NetSocket::read(char *data, qint64 maxlen)
 
 void NetSocket::readyRead()
 {
-    // when data comes in
+//    qDebug() << "readyRead socket";
     QByteArray buffer;
-    buffer.resize(m_sock->pendingDatagramSize());
+    buffer.resize(1024);
 
-    QHostAddress sender;
-    quint16 senderPort;
+    int len  = m_sock->readDatagram(buffer.data(), buffer.size());
 
-    // qint64 QUdpSocket::readDatagram(char * data, qint64 maxSize,
-    //                 QHostAddress * address = 0, quint16 * port = 0)
-    // Receives a datagram no larger than maxSize bytes and stores it in data.
-    // The sender's host address and port is stored in *address and *port
-    // (unless the pointers are 0).
+    if (len < 0)
+        return;
 
-    m_sock->readDatagram(buffer.data(), buffer.size(),
-                         &sender, &senderPort);
-
-//    qDebug() << "Message from: " << sender.toString();
-//    qDebug() << "Message port: " << senderPort;
-//    qDebug() << "Message: " << buffer;
-//    qDebug() << "-----------------------------";
+    std::lock_guard<std::mutex> lock(mutexMainBuff);
+    lenMainBuff = len;
+    delete [] mainBuff;
+    mainBuff = new uint8_t[lenMainBuff];
+    memcpy(mainBuff, (void*)buffer.data(), lenMainBuff);
 }
 
-void NetSocket::onSockDisconnected()
+void NetSocket::error(QAbstractSocket::SocketError err )
 {
-    qDebug() << "Disconnected";
-}
-
-void NetSocket::error()
-{
-    qDebug() << "error";
+    qDebug() << "error " << err;
 }

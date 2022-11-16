@@ -8,20 +8,20 @@
 #include <mutex>
 #include <pulse/pulseaudio.h>
 #include <Network/NetSocket.h>
-#define RATE 48000
 
+#define RATE 48000
 #define addr addr_work
+
 const QString addr_work = "192.9.206.60";
 const QString addr_home = "192.168.0.102";
 
+pa_threaded_mainloop *mloop = nullptr;
 
-pa_threaded_mainloop *mloop = pa_threaded_mainloop_new();
-pa_threaded_mainloop *mloop2 = pa_threaded_mainloop_new();
-NetSocket* sock = new NetSocket(addr, 1234);
+std::mutex mutexMainBuff;
+uint32_t lenMainBuff = 0;
+uint8_t* mainBuff = nullptr;
+NetSocket* sock = nullptr;
 
-
-std::mutex mut;
-std::queue<uint8_t> vecData;
 
 void stream_state_cb(pa_stream *s, void *mainloop);
 
@@ -41,27 +41,6 @@ void on_state_change1(pa_context *context, void *userdata)
     case PA_CONTEXT_TERMINATED:
         qDebug() << "PULSE AUDIO DISCONNECT. PA_CONTEXT_TERMINATED";
         pa_threaded_mainloop_signal(mloop, 0);
-        break;
-    }
-}
-
-
-void on_state_change2(pa_context *context, void *userdata)
-{
-    switch(pa_context_get_state(context))
-    {
-    case PA_CONTEXT_READY:
-        qDebug() << "PULSE AUDIO CONNECT. PA_CONTEXT_READY";
-        pa_threaded_mainloop_signal(mloop2, 0);
-        break;
-
-    case PA_CONTEXT_FAILED:
-        qDebug() << "PA_CONTEXT_FAILED";
-        break;
-
-    case PA_CONTEXT_TERMINATED:
-        qDebug() << "PULSE AUDIO DISCONNECT. PA_CONTEXT_TERMINATED";
-        pa_threaded_mainloop_signal(mloop2, 0);
         break;
     }
 }
@@ -90,41 +69,60 @@ void on_state_change2(pa_context *context, void *userdata)
 
 void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 {
-    qDebug() << "requested bytes  = " << requested_bytes;
-    static int k = 1;
-    qDebug()<< "Write call " << k++;
+        static int k = 1;
+        qDebug()<< "Write call " << k++;
+    std::unique_lock<std::mutex> lock(mutexMainBuff);
 
-    size_t bytes_remaining = requested_bytes;
+    if (lenMainBuff == 0)
+        return;
 
-    while (bytes_remaining > 0)
-    {
-        char *buffer = nullptr;
-        size_t bytes_to_fill = 1024;
-        if (bytes_to_fill > bytes_remaining) bytes_to_fill = bytes_remaining;
-        pa_stream_begin_write(stream, (void**) &buffer, &bytes_to_fill);
-        //memset(buffer, 1, bytes_to_fill);
-        int64_t res = sock->read(buffer, bytes_to_fill);
-        pa_stream_write(stream, buffer, bytes_to_fill, nullptr, 0, PA_SEEK_RELATIVE);
-        bytes_remaining -= bytes_to_fill;
-    }
+    size_t bytesToFill = lenMainBuff;
+    uint8_t buffer[bytesToFill];
 
-//    size_t bytes_to_fill = 1024;
-//    char *buffer = nullptr;
-//    int64_t res = sock->read(buffer, bytes_to_fill);
-//    if (res == -1)
+    memcpy(buffer, mainBuff, bytesToFill);
+
+    lenMainBuff = 0;
+
+    lock.unlock();
+
+    if (bytesToFill > requested_bytes)  bytesToFill = requested_bytes;
+
+    pa_stream_begin_write(stream, (void**) &buffer, &bytesToFill);
+    pa_stream_write(stream, buffer, bytesToFill, nullptr, 0, PA_SEEK_RELATIVE);
+    qDebug() << "writed " << bytesToFill;
+
+
+
+//    qDebug() << "requested bytes  = " << requested_bytes;
+////    static int k = 1;
+////    qDebug()<< "Write call " << k++;
+
+//    size_t bytes_remaining = requested_bytes;
+
+//    while (bytes_remaining > 0)
 //    {
-//        return;
+//        char *buffer = nullptr;
+//        size_t bytes_to_fill = 0;
+//        if (bytes_to_fill > bytes_remaining) bytes_to_fill = bytes_remaining;
+//        pa_stream_begin_write(stream, (void**) &buffer, &bytes_to_fill);
+//        if (!bytes_to_fill) return;
+//        int64_t res = sock->read(buffer, bytes_to_fill);
+//        if (res == -1)
+//        {
+//            qDebug() << "return";
+//            pa_stream_cancel_write(stream);
+//            return;
+//        }
+//        qDebug() << "YES DATA";
+//        pa_stream_write(stream, buffer, res, nullptr, 0, PA_SEEK_RELATIVE);
+//        bytes_remaining -= bytes_to_fill;
 //    }
-
-//    pa_stream_begin_write(stream, (void**) &buffer, &bytes_to_fill);
-//    pa_stream_write(stream, buffer, bytes_to_fill, NULL, 0, PA_SEEK_RELATIVE);
 }
 
 void on_i_complete(pa_stream *stream, size_t nbytes, void *udata)
 {
 //    static int k = 1;
 //    qDebug()<< "Read call " << k++;
-
     while (true)
     {
         const void* data;
@@ -134,7 +132,10 @@ void on_i_complete(pa_stream *stream, size_t nbytes, void *udata)
         {
             // Buffer is empty. Process more events
             break;
-        } else if (data == NULL && n != 0) {
+            auto b =0 ;
+        }
+        else if (data == NULL && n != 0)
+        {
             // Buffer overrun occurred
             qDebug() << "Buffer overrun occurred";
             return;
@@ -158,11 +159,11 @@ void on_i_complete(pa_stream *stream, size_t nbytes, void *udata)
 }
 
 
-void on_op_complete(pa_stream *s, int success, void *udata)
-{
-    pa_threaded_mainloop_signal(mloop2, 0);
-    qDebug() << "on_op_complete";
-}
+//void on_op_complete(pa_stream *s, int success, void *udata)
+//{
+//    pa_threaded_mainloop_signal(mloop2, 0);
+//    qDebug() << "on_op_complete";
+//}
 
 void stream_state_cb(pa_stream *s, void *mainloop)
 {
@@ -172,27 +173,19 @@ void stream_state_cb(pa_stream *s, void *mainloop)
 
 int main(int argc, char *argv[])
 {
-    Q_UNUSED(argc);
-    Q_UNUSED(argv);
+    QCoreApplication app(argc,argv);
+
+    sock = new NetSocket(addr,1234);
+    mloop = pa_threaded_mainloop_new();
 
     pa_threaded_mainloop_lock(mloop);
     pa_threaded_mainloop_start(mloop);
     pa_mainloop_api *apiRead = pa_threaded_mainloop_get_api(mloop);
-    pa_context *ctxRead = pa_context_new_with_proplist(apiRead, "123", nullptr);
+    pa_context *ctx = pa_context_new_with_proplist(apiRead, "123", nullptr);
     void *udataRead = nullptr;
-    pa_context_set_state_callback(ctxRead, on_state_change1, udataRead);
-    pa_context_connect(ctxRead, nullptr, PA_CONTEXT_NOAUTOSPAWN, nullptr);
+    pa_context_set_state_callback(ctx, on_state_change1, udataRead);
+    pa_context_connect(ctx, nullptr, PA_CONTEXT_NOAUTOSPAWN, nullptr);
     pa_threaded_mainloop_wait(mloop); //wait connect
-
-
-    pa_threaded_mainloop_lock(mloop2);
-    pa_threaded_mainloop_start(mloop2);
-    pa_mainloop_api *apiWrite = pa_threaded_mainloop_get_api(mloop2);
-    pa_context *ctxWrite = pa_context_new_with_proplist(apiWrite, "321", nullptr);
-    void *udataWrite = nullptr;
-    pa_context_set_state_callback(ctxWrite, on_state_change2, udataWrite);
-    pa_context_connect(ctxWrite, nullptr, PA_CONTEXT_NOAUTOSPAWN, nullptr);
-    pa_threaded_mainloop_wait(mloop2); //wait connect
 
 
 //-----------Устройства------------------
@@ -237,8 +230,8 @@ int main(int argc, char *argv[])
     pa_buffer_attr attr;
     attr.maxlength = (uint32_t) -1;
     attr.tlength = 1024;
-    attr.prebuf = (uint32_t) -1;
-    attr.minreq = (uint32_t) -1;
+    attr.prebuf = 0;
+    attr.minreq = 1024;
     attr.fragsize = 1024;
 
 
@@ -247,13 +240,13 @@ int main(int argc, char *argv[])
     attrRead.tlength = (uint32_t) -1;
     attrRead.prebuf = (uint32_t) -1;
     attrRead.minreq = (uint32_t) -1;
-    attrRead.fragsize = 2048;
+    attrRead.fragsize = 1024;
 
     pa_buffer_attr attrOut;
     attrOut.maxlength = (uint32_t) -1;
-    attrOut.tlength = 2048;
-    attrOut.prebuf = (uint32_t) -1;
-    attrOut.minreq = (uint32_t) -1;
+    attrOut.tlength = 1024;
+    attrOut.prebuf = 0;
+    attrOut.minreq = 1024;
     attrOut.fragsize = (uint32_t) -1;
 
     pa_stream_flags_t stream_flags = pa_stream_flags_t(PA_STREAM_START_CORKED | PA_STREAM_INTERPOLATE_TIMING |
@@ -263,7 +256,7 @@ int main(int argc, char *argv[])
     // [1]
 
 
-    pa_stream *stream = pa_stream_new(ctxRead, "MyAudioProjectRead", &spec, &map);
+    pa_stream *stream = pa_stream_new(ctx, "MyAudioProjectRead", &spec, &map);
     void* dataRead = nullptr;
     pa_stream_set_state_callback(stream, stream_state_cb, mloop);
     pa_stream_set_read_callback(stream, on_i_complete, dataRead);
@@ -282,10 +275,10 @@ int main(int argc, char *argv[])
         pa_threaded_mainloop_wait(mloop);
     }
 
-    pa_stream *streamOut = pa_stream_new(ctxWrite, "MyAudioProjectOut", &spec, &map);
+    pa_stream *streamOut = pa_stream_new(ctx, "MyAudioProjectOut", &spec, &map);
     void* dataOut = nullptr;
-    pa_stream_set_write_callback(streamOut, on_o_complete, mloop2);
-    pa_stream_set_state_callback(streamOut, stream_state_cb, mloop2);
+    pa_stream_set_write_callback(streamOut, on_o_complete, mloop);
+    pa_stream_set_state_callback(streamOut, stream_state_cb, mloop);
     pa_stream_connect_playback(streamOut, device_id, &attr, stream_flags, nullptr, nullptr);
     while (true)
     {
@@ -297,23 +290,25 @@ int main(int argc, char *argv[])
             qDebug() << "PA_STREAM_FAILED";
             return 0;
         }
-        pa_threaded_mainloop_wait(mloop2);
+        pa_threaded_mainloop_wait(mloop);
     }
 
     pa_threaded_mainloop_unlock(mloop);
-    pa_threaded_mainloop_unlock(mloop2);
-    QThread::usleep(100);
-    pa_stream_cork(streamOut, 0, 0, mloop2);
+    //pa_threaded_mainloop_unlock(mloop2);
+    pa_stream_cork(streamOut, 0, 0, mloop);
 
 
 
     qDebug() << "START WORKING";
 
-    while(true)
-    {
+    app.exec();
+//    while(true)
+//    {
+//        pa_stream_cork(streamOut, 0, 0, mloop);
 //        QThread::sleep(5);
-//        return 0;
-    }
+//        pa_stream_cork(streamOut, 1, 0, mloop);
+//        QThread::sleep(5);
+//    }
     qDebug() << "STOP WORKING";
    // pa_stream_cork(streamOut, 1, 0, mloop);
     pa_threaded_mainloop_lock(mloop); //
@@ -349,15 +344,16 @@ int main(int argc, char *argv[])
     pa_stream_disconnect(streamOut);
     pa_stream_unref(streamOut);
 
-    //pa_context_disconnect(ctx);
-    //pa_context_unref(ctx);
+    pa_context_disconnect(ctx);
+    pa_context_unref(ctx);
 
-    pa_context_disconnect(ctxRead);
-    pa_context_unref(ctxRead);
-    pa_context_disconnect(ctxWrite);
-    pa_context_unref(ctxWrite);
+//    pa_context_disconnect(ctxRead);
+//    pa_context_unref(ctxRead);
+//    pa_context_disconnect(ctxWrite);
+//    pa_context_unref(ctxWrite);
     pa_threaded_mainloop_stop(mloop); //
     pa_threaded_mainloop_free(mloop); //
+
     return 0;
 }
 

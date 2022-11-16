@@ -14,10 +14,10 @@ public:
     qint64 read(char* data, qint64 maxlen);
 
 private slots:
-    void onSockConnected();
+   // void onSockConnected();
     void readyRead();
-    void onSockDisconnected();
-    void error();
+    //void onSockDisconnected();
+    void error(QAbstractSocket::SocketError err );
 
 private:
     QUdpSocket* m_sock;
