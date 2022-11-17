@@ -42,6 +42,7 @@ qint64 NetSocket::read(char *data, qint64 maxlen)
 
 }
 
+
 void NetSocket::readyRead()
 {
 //    qDebug() << "readyRead socket";
