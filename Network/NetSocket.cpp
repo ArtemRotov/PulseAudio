@@ -4,10 +4,13 @@
 #include <iostream>
 #include <QThread>
 #include <mutex>
+#include <queue>
+
 
 extern uint8_t* mainBuff;
 extern std::mutex mutexMainBuff;
 extern uint32_t lenMainBuff;
+extern std::queue<uint8_t> queueBuff;
 
 NetSocket::NetSocket(const QString &addr, int port)
     : m_sock(new QUdpSocket(this))
@@ -42,10 +45,23 @@ qint64 NetSocket::read(char *data, qint64 maxlen)
 
 }
 
-
 void NetSocket::readyRead()
 {
-//    qDebug() << "readyRead socket";
+//    QByteArray buffer;
+//    buffer.resize(1024);
+
+//    int len  = m_sock->readDatagram(buffer.data(), buffer.size());
+//    qDebug() << "Readed " << len << " bytes (and removed old)";
+//    if (len < 0)
+//        return;
+
+//    std::lock_guard<std::mutex> lock(mutexMainBuff);
+//    for (int i = 0; i < len; ++i)
+//    {
+//        queueBuff.push((buffer.data())[i]);
+//    }
+
+//    //qDebug() << "readyRead socket";
     QByteArray buffer;
     buffer.resize(1024);
 

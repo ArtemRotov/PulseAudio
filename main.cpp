@@ -19,6 +19,8 @@ pa_threaded_mainloop *mloop = nullptr;
 
 std::mutex mutexMainBuff;
 uint32_t lenMainBuff = 0;
+std::queue<uint8_t> queueBuff;
+
 uint8_t* mainBuff = nullptr;
 NetSocket* sock = nullptr;
 
@@ -69,40 +71,59 @@ void on_state_change1(pa_context *context, void *userdata)
 
 void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 {
-//        static int k = 1;
-//        qDebug()<< "Write call " << k++;
+//    std::unique_lock<std::mutex> lock(mutexMainBuff);
+
+//    if (queueBuff.empty())
+//        return;
+//    size_t bytesToFill = queueBuff.size();
+//    if (bytesToFill > requested_bytes)  bytesToFill = requested_bytes;
+//    qDebug() << "i want write " << bytesToFill << "bytes, when i can write only " << requested_bytes <<" bytes";
+//    uint8_t* buffer;
+//    pa_stream_begin_write(stream, (void**) &buffer, &bytesToFill);
+
+
+//    for (int i = 0; i < bytesToFill; ++i)
+//    {
+//        buffer[i] = queueBuff.front();
+//        queueBuff.pop();
+//    }
+
+//    lock.unlock();
+
+
+//    pa_stream_write(stream, buffer, bytesToFill, nullptr, 0, PA_SEEK_RELATIVE);
+
+
+
+//----------------- Неработающий вариант -------------------------
     std::unique_lock<std::mutex> lock(mutexMainBuff);
 
     if (lenMainBuff == 0)
         return;
     qDebug() << "Writed " << lenMainBuff << "bytes, when i can write only " << requested_bytes <<" bytes";
     size_t bytesToFill = lenMainBuff;
-    uint8_t buffer[bytesToFill];
+    uint8_t* buffer;
+
+    if (bytesToFill > requested_bytes)  bytesToFill = requested_bytes;
+
+    pa_stream_begin_write(stream, (void**) &buffer, &bytesToFill);
 
     memcpy(buffer, mainBuff, bytesToFill);
 
     lenMainBuff = 0;
 
-    //lock.unlock();
+    lock.unlock();
 
-    if (bytesToFill > requested_bytes)  bytesToFill = requested_bytes;
-
-    pa_stream_begin_write(stream, (void**) &buffer, &bytesToFill);
     pa_stream_write(stream, buffer, bytesToFill, nullptr, 0, PA_SEEK_RELATIVE);
-    //qDebug() << "writed " << bytesToFill;
 
 
-
-//    qDebug() << "requested bytes  = " << requested_bytes;
-////    static int k = 1;
-////    qDebug()<< "Write call " << k++;
-
+//------ Работающий вариант с приемом прямо внутри --------------------
 //    size_t bytes_remaining = requested_bytes;
 
 //    while (bytes_remaining > 0)
 //    {
 //        char *buffer = nullptr;
-//        size_t bytes_to_fill = 0;
+//        size_t bytes_to_fill = 1024;
 //        if (bytes_to_fill > bytes_remaining) bytes_to_fill = bytes_remaining;
 //        pa_stream_begin_write(stream, (void**) &buffer, &bytes_to_fill);
 //        if (!bytes_to_fill) return;
@@ -302,13 +323,9 @@ int main(int argc, char *argv[])
     qDebug() << "START WORKING";
 
     app.exec();
-//    while(true)
-//    {
-//        pa_stream_cork(streamOut, 0, 0, mloop);
-//        QThread::sleep(5);
-//        pa_stream_cork(streamOut, 1, 0, mloop);
-//        QThread::sleep(5);
-//    }
+    while(true)
+    {
+    }
     qDebug() << "STOP WORKING";
    // pa_stream_cork(streamOut, 1, 0, mloop);
     pa_threaded_mainloop_lock(mloop); //
