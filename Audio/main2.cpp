@@ -1,220 +1,297 @@
-//#include "mainwindow.h"
+//#include "Gui/mainwindow.h"
 
 //#include <QApplication>
 //#include <QDebug>
-//#include <pulse/pulseaudio.h>
 //#include <vector>
+//#include <queue>
+//#include <QThread>
+//#include <mutex>
+//#include <pulse/pulseaudio.h>
+//#include <Network/NetSocket.h>
+
+//#define RATE 48000
+//#define addr addr_work
+
+//const QString addr_work = "192.9.206.60";
+//const QString addr_home = "192.168.0.102";
+
+//pa_threaded_mainloop *mloop = nullptr;
+
+//std::mutex mutexMainBuff;
+//uint32_t lenMainBuff = 0;
+//std::queue<uint8_t> queueBuff;
+
+//uint8_t* mainBuff = nullptr;
+//NetSocket* sock = nullptr;
 
 
-//std::vector<uint32_t*> vecData;
+//void stream_state_cb(pa_stream *s, void *mainloop);
 
-//pa_threaded_mainloop *mloop = pa_threaded_mainloop_new();
-
-////  А вот как выглядит наша функция обратного вызова onstatechange. Ничего умного: мы просто сигнализируем нашему
-////  потоку о выходе из pa_threaded_mainloop_wait(), где мы в данный момент зависаем. Обратите внимание, что эта функция
-////  вызывается не из нашего собственного потока (он все еще продолжает зависать), а из потока ввода-вывода, который мы
-////  запустили ранее с помощью pa_threaded_mainloop_start(). Как правило, старайтесь, чтобы код в этих функциях обратного
-////  вызова был как можно меньше. Ваша функция вызывается, вы получаете результат и отправляете сигнал своему потоку -
-////  - этого должно быть достаточно.
-//void on_state_change(pa_context *c, void *userdata)
+//void on_state_change1(pa_context *context, void *userdata)
 //{
-//    pa_threaded_mainloop_signal(mloop, 0);
-//    qDebug() << "CONNECT";
+//    switch(pa_context_get_state(context))
+//    {
+//    case PA_CONTEXT_READY:
+//        qDebug() << "PULSE AUDIO CONNECT. PA_CONTEXT_READY";
+//        pa_threaded_mainloop_signal(mloop, 0);
+//        break;
+
+//    case PA_CONTEXT_FAILED:
+//        qDebug() << "PA_CONTEXT_FAILED";
+//        break;
+
+//    case PA_CONTEXT_TERMINATED:
+//        qDebug() << "PULSE AUDIO DISCONNECT. PA_CONTEXT_TERMINATED";
+//        pa_threaded_mainloop_signal(mloop, 0);
+//        break;
+//    }
 //}
 
+////void on_dev_sink(pa_context *c, const pa_sink_info *info, int eol, void *udata)
+////{
+////    if (eol != 0) {
+////        pa_threaded_mainloop_signal(mloop, 0);
+////        return;
+////    }
 
-//void on_dev_sink(pa_context *c, const pa_sink_info *info, int eol, void *udata)
+////    const char *device_id = info->name;
+////    qDebug() << "on_dev_sink:   " << device_id;
+////}
+
+////void on_dev_source(pa_context *c, const pa_source_info *info, int eol, void *udata)
+////{
+////    if (eol != 0) {
+////        pa_threaded_mainloop_signal(mloop, 0);
+////        return;
+////    }
+
+////    const char *device_id = info->name;
+////    qDebug() << "on_dev_source:   " << device_id;
+////}
+
+//void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 //{
-//    if (eol != 0) {
-//        pa_threaded_mainloop_signal(mloop, 0);
+////    if (requested_bytes > 1500)
+////        pa_stream_flush(stream,nullptr,nullptr);
+
+//    std::unique_lock<std::mutex> lock(mutexMainBuff);
+//    //qDebug() << "Buffer size = " << queueBuff.size();
+//    if (queueBuff.empty())
+//    {
+//        pa_stream_flush(stream,nullptr,nullptr);
 //        return;
 //    }
 
-//    const char *device_id = info->name;
-//    qDebug() << "on_dev_sink:   " << device_id;
-//}
+//    size_t bytesToFill = queueBuff.size();
+//    if (bytesToFill > requested_bytes)  bytesToFill = requested_bytes;
+//    //qDebug() << "i want write " << bytesToFill << "bytes, when i can write only " << requested_bytes <<" bytes";
+//    uint8_t* buffer;
+//    pa_stream_begin_write(stream, (void**) &buffer, &bytesToFill);
 
-//void on_dev_source(pa_context *c, const pa_source_info *info, int eol, void *udata)
-//{
-//    if (eol != 0) {
-//        pa_threaded_mainloop_signal(mloop, 0);
-//        return;
+
+//    for (int i = 0; i < bytesToFill; ++i)
+//    {
+//        buffer[i] = queueBuff.front();
+//        queueBuff.pop();
 //    }
 
-//    const char *device_id = info->name;
-//    qDebug() << "on_dev_source:   " << device_id;
+//    lock.unlock();
+
+
+//    pa_stream_write(stream, buffer, bytesToFill, nullptr, 0, PA_SEEK_RELATIVE);
+
+
+////----------------- Неработающий вариант -------------------------
+////    std::unique_lock<std::mutex> lock(mutexMainBuff);
+
+////    if (lenMainBuff == 0)
+////        return;
+////    qDebug() << "Writed " << lenMainBuff << "bytes, when i can write only " << requested_bytes <<" bytes";
+////    size_t bytesToFill = lenMainBuff;
+////    uint8_t* buffer;
+
+////    if (bytesToFill > requested_bytes)  bytesToFill = requested_bytes;
+
+////    pa_stream_begin_write(stream, (void**) &buffer, &bytesToFill);
+
+////    memcpy(buffer, mainBuff, bytesToFill);
+
+////    lenMainBuff = 0;
+
+////    lock.unlock();
+
+////    pa_stream_write(stream, buffer, bytesToFill, nullptr, 0, PA_SEEK_RELATIVE);
+
+
+////------ Работающий вариант с приемом прямо внутри --------------------
+////    size_t bytes_remaining = requested_bytes;
+
+////    while (bytes_remaining > 0)
+////    {
+////        char *buffer = nullptr;
+////        size_t bytes_to_fill = 1024;
+////        if (bytes_to_fill > bytes_remaining) bytes_to_fill = bytes_remaining;
+////        pa_stream_begin_write(stream, (void**) &buffer, &bytes_to_fill);
+////        if (!bytes_to_fill) return;
+////        int64_t res = sock->read(buffer, bytes_to_fill);
+////        if (res == -1)
+////        {
+////            qDebug() << "return";
+////            pa_stream_cancel_write(stream);
+////            return;
+////        }
+////        qDebug() << "YES DATA";
+////        pa_stream_write(stream, buffer, res, nullptr, 0, PA_SEEK_RELATIVE);
+////        bytes_remaining -= bytes_to_fill;
+////    }
 //}
 
-
-//void on_io_complete(pa_stream *s, size_t nbytes, void *udata)
+//void on_i_complete(pa_stream *stream, size_t nbytes, void *udata)
 //{
-//    pa_threaded_mainloop_signal(mloop, 0);
-//    qDebug() << "on_io_complete";
-//}
-
-
-//void on_op_complete(pa_stream *s, int success, void *udata)
-//{
-//    pa_threaded_mainloop_signal(mloop, 0);
-//    qDebug() << "on_op_complete";
-//}
-
-//int main3(int argc, char *argv[])
-//{
-//   // QApplication a(argc, argv);
-
-
-////  Мы начинаем с создания отдельного потока, который будет обрабатывать операции ввода-вывода сокета для нас.
-////  Не забудьте остановить этот поток и закрыть его обработчики после того, как мы закончим с PulseAudio.
-
-//    pa_threaded_mainloop_start(mloop);
-
-
-////  Первое, что нужно помнить при использовании PulseAudio, - это то, что мы должны выполнять все операции,
-////  удерживая внутреннюю блокировку для этого потока ввода-вывода. "Заблокируйте поток",
-////  выполните необходимые вызовы объектов PA, а затем "разблокируйте поток".
-//    pa_threaded_mainloop_lock(mloop);//--------------------
-
-////  Теперь начните подключение к серверу PA. Обратите внимание, что функция pa_context_connect() обычно возвращает
-////  результат немедленно, даже если соединение еще не установлено. Мы получим результат подключения позже
-////  в функции обратного вызова, которую мы задаем через pa_context_set_state_callback(). Не забудьте отключиться
-////  от сервера, когда мы закончим.
-//    pa_mainloop_api *mlapi = pa_threaded_mainloop_get_api(mloop);
-//    pa_context *ctx = pa_context_new_with_proplist(mlapi, "My App", NULL);
-
-//    void *udata = NULL;
-//    pa_context_set_state_callback(ctx, on_state_change, udata);
-//    pa_context_connect(ctx, NULL, pa_context_flags_t(0), NULL);
-
-////  После того, как мы выдали команду подключения, нам больше нечего делать, кроме как ждать результата. Мы запрашиваем статус соединения
-////  и если оно еще не готово, мы вызываем pa_threaded_mainloop_wait(), который блокирует ваш поток до получения сигнала.
-//    while (PA_CONTEXT_READY != pa_context_get_state(ctx))
+////    static int k = 0;
+////    k++;
+////    qDebug() << k;
+//    while (true)
 //    {
-//        pa_threaded_mainloop_wait(mloop);
-//    }
-//    qDebug() << "here";
-////  После установления соединения с сервером PA мы переходим к перечислению доступных устройств. Мы создаем новую операцию с функцией обратного вызова.
-////  Мы также можем передать некоторый указатель на нашу функцию обратного вызова, но я просто использую НУЛЕВОЕ значение. Не забудьте отпустить
-////  указатель после завершения операции. И, конечно же, этот код должен выполняться только при удержании блокировки потока основного цикла.
-
-//    pa_operation *op;
-//    void *udata1 = NULL;
-//    if (1) // playback
-//        op = pa_context_get_sink_info_list(ctx, on_dev_sink, udata1);
-//    else
-//        op = pa_context_get_source_info_list(ctx, on_dev_source, udata1);
-
-//    //  Теперь подождите, пока операция не будет завершена.
-//    for (;;)
-//    {
-//        int r = pa_operation_get_state(op);
-//        if (r == PA_OPERATION_DONE || r == PA_OPERATION_CANCELLED)
-//            break;
-//        pa_threaded_mainloop_wait(mloop);
-//    }
-
-////  Пока мы этим занимаемся, поток ввода-вывода получает данные с сервера и выполняет несколько успешных вызовов нашей функции обратного вызова, где мы можем получить
-////  доступ ко всем свойствам для каждого доступного устройства. Когда произошла ошибка или когда устройств больше нет, параметру eol присваивается ненулевое значение.
-////  Когда это происходит, мы просто посылаем сигнал в наш поток. Функция для перечисления устройств воспроизведения выглядит следующим образом: void on_dev_sink
-////  И функция для перечисления записывающих устройств выглядит аналогично: void on_dev_source
-////  Значение данных - это значение, которое мы устанавливаем при вызове pa_context_get_*_info_list(). В нашем коде они всегда равны нулю, потому что моя переменная mloop
-////  является глобальной, и нам больше ничего не нужно.
-
-//    pa_operation_unref(op);
-
-
-
-////  Мы создаем новый аудиобуфер с помощью функции pa_stream_new(), передавая ему наш контекст подключения, имя нашего приложения и формат звука, который мы хотим использовать.
-
-//    pa_sample_spec spec;
-//    spec.format = PA_SAMPLE_S16LE;
-//    spec.rate = 48000;
-//    spec.channels = 1;
-//    pa_stream *stm = pa_stream_new(ctx, "", &spec, NULL);
-
-////  Далее мы подключаем наш буфер к устройству с помощью pa_stream_connect_*(). Мы устанавливаем длину буфера в pa_buffer_attr::tlength в байтах, а все остальные параметры
-////  оставляем по умолчанию (установив для них значение -1). Мы также назначаем с помощью pa_stream_set_*_callback() нашу функцию обратного вызова, которая будет вызываться
-////  каждый раз, когда аудио ввод-вывод будет завершен. Мы можем использовать значение device_id, полученное при перечислении устройств, или мы можем использовать NULL для
-////  устройства по умолчанию.
-//    pa_buffer_attr attr;
-//    memset(&attr, 0xff, sizeof(attr));
-
-//    int buffer_length_msec = 500;
-//    attr.tlength = spec.rate * 16/8 * spec.channels * buffer_length_msec / 1000;
-
-////  Для записи потоков мы делаем:
-//    void *udata2 = NULL;
-
-
-//    pa_stream_set_read_callback(stm, on_io_complete, udata2);
-//    const char *device_id = NULL;
-//    pa_stream_connect_record(stm, device_id, &attr, pa_stream_flags_t(0));
-
-//   // pa_stream_set_write_callback(stm, on_io_complete, udata2);
-//   // pa_stream_connect_playback(stm, device_id, &attr, pa_stream_flags_t(0), NULL, NULL);
-
-////  Как обычно, нам приходится ждать, пока наша операция не будет завершена. Мы считываем текущее состояние нашего буфера с помощью функции pa_stream_get_state().
-////  PA_STREAM_READY означает, что запись запущена успешно, и мы можем продолжить нормальную работу. PA_STREAM_FAILED означает, что произошла ошибка.
-//    for (;;)
-//    {
-//        int r = pa_stream_get_state(stm);
-//        if (r == PA_STREAM_READY)
-//            break;
-//        else if (r == PA_STREAM_FAILED)
-//        {
-//            qDebug() << "PA_STREAM_FAILED";
-//            return 0;
-//        }
-
-////  Пока мы зависаем внутри pa_threaded_mainloop_wait(), наша функция обратного вызова on_io_complete() будет вызвана в какой-то момент внутри потока ввода-вывода.
-////  Теперь мы просто посылаем сигнал нашему основному потоку.
-//        pa_threaded_mainloop_wait(mloop);
-//    }
-
-////  И для потоков воспроизведения:
-////    void *udata = NULL;
-////    pa_stream_set_write_callback(stm, on_io_complete, udata);
-////    const char *device_id = ...;
-////    pa_stream_connect_playback(stm, device_id, &attr, 0, NULL, NULL);
-////    ...
-
-////  Мы получаем область данных с аудиосэмплами из PulseAudio с помощью pa_stream_peek(), и после того, как мы ее обработали, мы отбрасываем эти данные с помощью pa_stream_drop().
-////  pa_stream_peek() возвращает 0 выборок, когда буфер пуст. В этом случае нам не нужно вызывать pa_stream_drop(), и мы должны подождать, пока не поступит больше данных.
-////  Когда происходит переполнение буфера, мы имеем data=NULL. Это просто уведомление для нас, и мы можем продолжить, вызвав pa_stream_drop(), а затем снова pa_stream_peek().
-
-//    for (;;)
-//    {
-//        const void *data;
+//        const void* data;
 //        size_t n;
-//        pa_stream_peek(stm, &data, &n);
-//        if (n == 0) {
-//            // Buffer is empty. Process more events
-//            qDebug() << "buffer is empty()";
-//            pa_threaded_mainloop_wait(mloop);
-//            continue;
-
-//        } else if (data == NULL && n != 0) {
+//        pa_stream_peek(stream, &data, &n);
+////        if (k < 1000 || (k > 6000 && k < 9000))
+////        {
+////            pa_stream_drop(stream);
+////            break;
+////        }
+//        if (data == NULL && n == 0)
+//            return;  // Buffer is empty. Process more events
+//        else if (data == NULL && n != 0)
+//        {
 //            // Buffer overrun occurred
 //            qDebug() << "Buffer overrun occurred";
-
-//        } else {
-//            qDebug() << "Good data";
-//            vecData.emplace_back((uint32_t*)(data));
-//            if (vecData.size() > 50)
-//                break;
+//            break;
 //        }
-//              pa_stream_drop(stm);
+//        else
+//        {
+//            uint8_t* ptr = (uint8_t*)data;
+//            for (int i = 0; i < n;)
+//            {
+//                int bytes = ((n - i) < 1024) ? n - i : 1024;
+//                sock->send((void*)ptr,bytes, addr, 1234);
+//                //qDebug() << "Sended " << bytes << " bytes";
+//                i += bytes;
+//                ptr = ptr + bytes;
+//            }
+//        }
+//        pa_stream_drop(stream);
 //    }
+//}
 
-//    pa_stream_disconnect(stm);
-//    //pa_stream_unref(stm);
 
-//    pa_stream_set_write_callback(stm, on_io_complete, udata2);
-//    pa_stream_connect_playback(stm, device_id, &attr, pa_stream_flags_t(0), NULL, NULL);
+////void on_op_complete(pa_stream *s, int success, void *udata)
+////{
+////    pa_threaded_mainloop_signal(mloop2, 0);
+////    qDebug() << "on_op_complete";
+////}
 
-//    for (;;)
+//void stream_state_cb(pa_stream *s, void *mainloop)
+//{
+//    pa_threaded_mainloop_signal((pa_threaded_mainloop*)mainloop, 0);
+//}
+
+
+//int main(int argc, char *argv[])
+//{
+//    QCoreApplication app(argc,argv);
+
+//    sock = new NetSocket(addr,1234);
+//    mloop = pa_threaded_mainloop_new();
+
+//    pa_threaded_mainloop_lock(mloop);
+//    pa_threaded_mainloop_start(mloop);
+//    pa_mainloop_api *apiRead = pa_threaded_mainloop_get_api(mloop);
+//    pa_context *ctx = pa_context_new_with_proplist(apiRead, "123", nullptr);
+//    void *udataRead = nullptr;
+//    pa_context_set_state_callback(ctx, on_state_change1, udataRead);
+//    pa_context_connect(ctx, nullptr, PA_CONTEXT_NOAUTOSPAWN, nullptr);
+//    pa_threaded_mainloop_wait(mloop); //wait connect
+
+
+////-----------Устройства------------------
+////    pa_operation *operationSink;
+////    pa_operation *operationSource;
+////    void* udataSink = nullptr;
+////    void* udataSource = nullptr;
+
+////    operationSink = pa_context_get_sink_info_list(ctx, on_dev_sink, udataSink);
+////    while (true)
+////    {
+////        int result = pa_operation_get_state(operationSink);
+////        if (result == PA_OPERATION_DONE || result == PA_OPERATION_CANCELLED)
+////            break;
+////        pa_threaded_mainloop_wait(mloop);
+////    }
+////    pa_operation_unref(operationSink);
+
+////    operationSource = pa_context_get_source_info_list(ctx, on_dev_source, udataSource);
+////    while (true)
+////    {
+////        int result = pa_operation_get_state(operationSource);
+////        if (result == PA_OPERATION_DONE || result == PA_OPERATION_CANCELLED)
+////            break;
+////        pa_threaded_mainloop_wait(mloop);
+////    }
+////    pa_operation_unref(operationSource);
+////-----------Устройства------------------
+
+
+
+//    // [1] Настройка каналов
+//    pa_sample_spec spec;
+//    spec.format = PA_SAMPLE_U8;
+//    spec.rate = RATE;
+//    spec.channels = 2;
+//    pa_channel_map map;     //Тут смотреть левый правый похоже
+//    pa_channel_map_init_stereo(&map);
+//    map.map[0] = PA_CHANNEL_POSITION_FRONT_LEFT;   //PA_CHANNEL_POSITION_FRONT_LEFT
+//    map.map[1] = PA_CHANNEL_POSITION_FRONT_RIGHT;    //PA_CHANNEL_POSITION_FRONT_RIGHT
+
+//    pa_buffer_attr attr;
+//    attr.maxlength = (uint32_t) -1;
+//    attr.tlength = 1024;
+//    attr.prebuf = 0;
+//    attr.minreq = 1024;
+//    attr.fragsize = 1024;
+
+
+//    pa_buffer_attr attrRead;
+//    attrRead.maxlength = (uint32_t) -1;
+//    attrRead.tlength = (uint32_t) -1;
+//    attrRead.prebuf = (uint32_t) -1;
+//    attrRead.minreq = (uint32_t) -1;
+//    attrRead.fragsize = 1024;
+
+//    pa_buffer_attr attrOut;
+//    attrOut.maxlength = (uint32_t) -1;
+//    attrOut.tlength = 1024;
+//    attrOut.prebuf = 0;
+//    attrOut.minreq = 1024;
+//    attrOut.fragsize = (uint32_t) -1;
+
+//    pa_stream_flags_t stream_flags = pa_stream_flags_t(PA_STREAM_START_CORKED | PA_STREAM_INTERPOLATE_TIMING |
+//    PA_STREAM_NOT_MONOTONIC | PA_STREAM_AUTO_TIMING_UPDATE /*| PA_STREAM_ADJUST_LATENCY*/);
+
+//    const char *device_id = nullptr;
+//    // [1]
+
+
+//    pa_stream *stream = pa_stream_new(ctx, "MyAudioProjectRead", &spec, &map);
+//    void* dataRead = nullptr;
+//    pa_stream_set_state_callback(stream, stream_state_cb, mloop);
+//    pa_stream_set_read_callback(stream, on_i_complete, dataRead);
+//    if (pa_stream_connect_record(stream, device_id, &attr, PA_STREAM_ADJUST_LATENCY) != 0)
+//        return -5; //not success
+//    while (true)
 //    {
-//        int r = pa_stream_get_state(stm);
+//        int r = pa_stream_get_state(stream);
 //        if (r == PA_STREAM_READY)
 //            break;
 //        else if (r == PA_STREAM_FAILED)
@@ -225,51 +302,90 @@
 //        pa_threaded_mainloop_wait(mloop);
 //    }
 
-//    for (int i = 0; i < vecData.size();++i)
+//    pa_stream *streamOut = pa_stream_new(ctx, "MyAudioProjectOut", &spec, &map);
+//    void* dataOut = nullptr;
+//    pa_stream_set_write_callback(streamOut, on_o_complete, mloop);
+//    pa_stream_set_state_callback(streamOut, stream_state_cb, mloop);
+//    pa_stream_connect_playback(streamOut, device_id, &attr, stream_flags, nullptr, nullptr);
+//    while (true)
 //    {
-//            size_t n = pa_stream_writable_size(stm);
-//            if (n == 0)
-//            {
-//                pa_threaded_mainloop_wait(mloop);
-//                continue;
-//            }
-//            void *buf = vecData[i];
-//            pa_stream_begin_write(stm, &buf, &n);
-//            void *udata3 = NULL;
-//            pa_operation *op = pa_stream_drain(stm, on_op_complete, udata3);
-//            for (;;)
-//            {
-//                int r = pa_operation_get_state(op);
-//                if (r == PA_OPERATION_DONE || r == PA_OPERATION_CANCELLED)
-//                    break;
-//                pa_threaded_mainloop_wait(mloop);
-//            }
-//            pa_operation_unref(op);
-//            pa_stream_write(stm, buf, n, NULL, 0, PA_SEEK_RELATIVE);
-
+//        int r = pa_stream_get_state(streamOut);
+//        if (r == PA_STREAM_READY)
+//            break;
+//        else if (r == PA_STREAM_FAILED)
+//        {
+//            qDebug() << "PA_STREAM_FAILED";
+//            return 0;
+//        }
+//        pa_threaded_mainloop_wait(mloop);
 //    }
 
-//    pa_stream_disconnect(stm);
-//    pa_stream_unref(stm);
+//    pa_threaded_mainloop_unlock(mloop);
+//    pa_stream_cork(streamOut, 0, 0, mloop);
+
+//    qDebug() << "START WORKING";
+
+//    app.exec();
+//    while(true)
+//    {
+//    }
+//    qDebug() << "STOP WORKING";
+//   // pa_stream_cork(streamOut, 1, 0, mloop);
+//    pa_threaded_mainloop_lock(mloop); //
+//    pa_stream_disconnect(stream);
+//    pa_stream_unref(stream);
+
+////    pa_stream *streamOut = pa_stream_new(ctx, "MyAudioProjectOut", &spec, &map);
+////    void* dataOut = nullptr;
+////    pa_stream_set_write_callback(streamOut, on_o_complete, mloop);
+////    pa_stream_set_state_callback(streamOut, stream_state_cb, mloop);
+////    pa_stream_connect_playback(streamOut, device_id, &attr, stream_flags, nullptr, nullptr);
+
+////    while (true)
+////    {
+////        int r = pa_stream_get_state(streamOut);
+////        if (r == PA_STREAM_READY)
+////            break;
+////        else if (r == PA_STREAM_FAILED)
+////        {
+////            qDebug() << "PA_STREAM_FAILED";
+////            return 0;
+////        }
+////        pa_threaded_mainloop_wait(mloop);
+////    }
+////    pa_stream_cork(streamOut, 0, 0, mloop);
+////    pa_threaded_mainloop_unlock(mloop); //
 
 
 
 
+//    pa_stream_cork(streamOut, 1, 0, mloop);
 
+//    pa_stream_disconnect(streamOut);
+//    pa_stream_unref(streamOut);
 
 //    pa_context_disconnect(ctx);
 //    pa_context_unref(ctx);
 
-//    pa_threaded_mainloop_unlock(mloop); // Разблокировка потока//------------------
+////    pa_context_disconnect(ctxRead);
+////    pa_context_unref(ctxRead);
+////    pa_context_disconnect(ctxWrite);
+////    pa_context_unref(ctxWrite);
+//    pa_threaded_mainloop_stop(mloop); //
+//    pa_threaded_mainloop_free(mloop); //
 
-
-//    pa_threaded_mainloop_stop(mloop); // Остановка потока
-//    pa_threaded_mainloop_free(mloop); // Закрытие обработчика
-
-
-//    //return a.exec();
 //    return 0;
 //}
+
+
+
+
+
+
+
+
+
+
 
 
 

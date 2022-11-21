@@ -71,50 +71,56 @@ void on_state_change1(pa_context *context, void *userdata)
 
 void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 {
-//    std::unique_lock<std::mutex> lock(mutexMainBuff);
+//    if (requested_bytes > 1500)
+//        pa_stream_flush(stream,nullptr,nullptr);
 
-//    if (queueBuff.empty())
-//        return;
-//    size_t bytesToFill = queueBuff.size();
-//    if (bytesToFill > requested_bytes)  bytesToFill = requested_bytes;
-//    qDebug() << "i want write " << bytesToFill << "bytes, when i can write only " << requested_bytes <<" bytes";
-//    uint8_t* buffer;
-//    pa_stream_begin_write(stream, (void**) &buffer, &bytesToFill);
-
-
-//    for (int i = 0; i < bytesToFill; ++i)
-//    {
-//        buffer[i] = queueBuff.front();
-//        queueBuff.pop();
-//    }
-
-//    lock.unlock();
-
-
-//    pa_stream_write(stream, buffer, bytesToFill, nullptr, 0, PA_SEEK_RELATIVE);
-
-
-
-//----------------- Неработающий вариант -------------------------
     std::unique_lock<std::mutex> lock(mutexMainBuff);
-
-    if (lenMainBuff == 0)
+    //qDebug() << "Buffer size = " << queueBuff.size();
+    if (queueBuff.empty())
+    {
+        pa_stream_flush(stream,nullptr,nullptr);
         return;
-    qDebug() << "Writed " << lenMainBuff << "bytes, when i can write only " << requested_bytes <<" bytes";
-    size_t bytesToFill = lenMainBuff;
-    uint8_t* buffer;
+    }
 
+    size_t bytesToFill = queueBuff.size();
     if (bytesToFill > requested_bytes)  bytesToFill = requested_bytes;
-
+    //qDebug() << "i want write " << bytesToFill << "bytes, when i can write only " << requested_bytes <<" bytes";
+    uint8_t* buffer;
     pa_stream_begin_write(stream, (void**) &buffer, &bytesToFill);
 
-    memcpy(buffer, mainBuff, bytesToFill);
 
-    lenMainBuff = 0;
+    for (int i = 0; i < bytesToFill; ++i)
+    {
+        buffer[i] = queueBuff.front();
+        queueBuff.pop();
+    }
 
     lock.unlock();
 
+
     pa_stream_write(stream, buffer, bytesToFill, nullptr, 0, PA_SEEK_RELATIVE);
+
+
+//----------------- Неработающий вариант -------------------------
+//    std::unique_lock<std::mutex> lock(mutexMainBuff);
+
+//    if (lenMainBuff == 0)
+//        return;
+//    qDebug() << "Writed " << lenMainBuff << "bytes, when i can write only " << requested_bytes <<" bytes";
+//    size_t bytesToFill = lenMainBuff;
+//    uint8_t* buffer;
+
+//    if (bytesToFill > requested_bytes)  bytesToFill = requested_bytes;
+
+//    pa_stream_begin_write(stream, (void**) &buffer, &bytesToFill);
+
+//    memcpy(buffer, mainBuff, bytesToFill);
+
+//    lenMainBuff = 0;
+
+//    lock.unlock();
+
+//    pa_stream_write(stream, buffer, bytesToFill, nullptr, 0, PA_SEEK_RELATIVE);
 
 
 //------ Работающий вариант с приемом прямо внутри --------------------
@@ -142,25 +148,26 @@ void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 
 void on_i_complete(pa_stream *stream, size_t nbytes, void *udata)
 {
-//    static int k = 1;
-//    qDebug()<< "Read call " << k++;
+    static int k = 0;
+    k++;
+    qDebug() <<"REC: " << k;
     while (true)
     {
         const void* data;
         size_t n;
         pa_stream_peek(stream, &data, &n);
+//        if (k < 1000 || (k > 6000 && k < 9000))
+//        {
+//            pa_stream_drop(stream);
+//            break;
+//        }
         if (data == NULL && n == 0)
-        {
-            // Buffer is empty. Process more events
-            break;
-            auto b =0 ;
-        }
+            return;  // Buffer is empty. Process more events
         else if (data == NULL && n != 0)
         {
             // Buffer overrun occurred
             qDebug() << "Buffer overrun occurred";
-            return;
-
+            break;
         }
         else
         {
@@ -169,12 +176,11 @@ void on_i_complete(pa_stream *stream, size_t nbytes, void *udata)
             {
                 int bytes = ((n - i) < 1024) ? n - i : 1024;
                 sock->send((void*)ptr,bytes, addr, 1234);
-                qDebug() << "Sended " << bytes << " bytes";
+                //qDebug() << "Sended " << bytes << " bytes";
                 i += bytes;
                 ptr = ptr + bytes;
             }
         }
-
         pa_stream_drop(stream);
     }
 }
@@ -315,16 +321,21 @@ int main(int argc, char *argv[])
     }
 
     pa_threaded_mainloop_unlock(mloop);
-    //pa_threaded_mainloop_unlock(mloop2);
     pa_stream_cork(streamOut, 0, 0, mloop);
-
-
 
     qDebug() << "START WORKING";
 
     app.exec();
     while(true)
     {
+        pa_stream_cork(stream, 1, 0, mloop);
+
+        QThread::sleep(3);
+
+        pa_stream_cork(stream, 0, 0, mloop);
+
+        QThread::sleep(3);
+
     }
     qDebug() << "STOP WORKING";
    // pa_stream_cork(streamOut, 1, 0, mloop);
@@ -373,16 +384,3 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
