@@ -9,7 +9,7 @@ class pa_context;
 namespace pulse
 {
 
-    class PulseAudioService
+    class PulseAudioHandler
     {
         typedef     pa_threaded_mainloop*   MainLoopPtr;
         typedef     pa_mainloop_api*        MainLoopApiPtr;
@@ -32,11 +32,11 @@ namespace pulse
         void init();
         static void stateChanged(ContextPtr context, void* userData);
 
-        static MainLoopPtr     m_mainLoop;
-        MainLoopApiPtr  m_mainLoopApi;
-        ContextPtr      m_context;
+        static MainLoopPtr  m_mainLoop;
+        MainLoopApiPtr      m_mainLoopApi;
+        ContextPtr          m_context;
 
-        void*           m_data;
+        void*               m_data;
     };
 
 }

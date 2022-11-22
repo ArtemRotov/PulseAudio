@@ -1,17 +1,16 @@
 #include <pulse/pulseaudio.h>
 #include <QCoreApplication>
 #include <QDebug>
-#include "PulseAudioService.h"
+#include "PulseAudioHandler.h"
 
 
 
 using namespace pulse;
 
-PulseAudioService::MainLoopPtr PulseAudioService::m_mainLoop = nullptr;
+PulseAudioHandler::MainLoopPtr PulseAudioHandler::m_mainLoop = nullptr;
 
 
-PulseAudioService::PulseAudioService()
-//    : m_mainLoop(pa_threaded_mainloop_new())
+PulseAudioHandler::PulseAudioHandler()
     : m_mainLoopApi(nullptr)
     , m_context(nullptr)
     , m_data(nullptr)
@@ -19,7 +18,7 @@ PulseAudioService::PulseAudioService()
     init();
 }
 
-PulseAudioService::~PulseAudioService()
+PulseAudioHandler::~PulseAudioHandler()
 {
     pa_context_unref(m_context);
     pa_context_disconnect(m_context);
@@ -28,8 +27,10 @@ PulseAudioService::~PulseAudioService()
     pa_threaded_mainloop_free(m_mainLoop);
 }
 
-void PulseAudioService::init()
+void PulseAudioHandler::init()
 {
+    m_mainLoop = pa_threaded_mainloop_new();
+
     pa_threaded_mainloop_lock(m_mainLoop);
     pa_threaded_mainloop_start(m_mainLoop);
 
@@ -38,19 +39,19 @@ void PulseAudioService::init()
     m_context = pa_context_new_with_proplist(m_mainLoopApi, Name.c_str(), nullptr);
 
     pa_context_set_state_callback(m_context,
-                                  PulseAudioService::stateChanged,
+                                  PulseAudioHandler::stateChanged,
                                   m_data);
     pa_context_connect(m_context, nullptr, PA_CONTEXT_NOAUTOSPAWN, nullptr);
     pa_threaded_mainloop_wait(m_mainLoop);
 }
 
-PulseAudioService& PulseAudioService::instance()
+PulseAudioHandler& PulseAudioHandler::instance()
 {
-    static PulseAudioService theSingleInstance;
+    static PulseAudioHandler theSingleInstance;
     return theSingleInstance;
 }
 
-void PulseAudioService::stateChanged(ContextPtr context, void* userData)
+void PulseAudioHandler::stateChanged(ContextPtr context, void* userData)
 {
     Q_UNUSED(userData);
 
