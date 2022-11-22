@@ -10,7 +10,6 @@ PulseAudioHandler::MainLoopPtr PulseAudioHandler::m_mainLoop = nullptr;
 PulseAudioHandler::PulseAudioHandler()
     : m_mainLoopApi(nullptr)
     , m_context(nullptr)
-    , m_data(nullptr)
 {
     init();
 }
@@ -78,7 +77,7 @@ void PulseAudioHandler::stateChanged(ContextPtr context, void* userData)
 
 void PulseAudioHandler::doDeviceInfo() const
 {
-    pa_operation* operationSink = pa_context_get_sink_info_list(m_context,
+    OperationPtr operationSink = pa_context_get_sink_info_list(m_context,
                                     PulseAudioHandler::deviceInfo, nullptr);
     while (true)
     {
@@ -89,7 +88,7 @@ void PulseAudioHandler::doDeviceInfo() const
     }
     pa_operation_unref(operationSink);
 
-    pa_operation* operationSource = pa_context_get_source_info_list(m_context,
+    OperationPtr operationSource = pa_context_get_source_info_list(m_context,
                                         PulseAudioHandler::deviceInfo, nullptr);
     while (true)
     {

@@ -38,7 +38,8 @@ HEADERS +=                              \
     $$PWD/Network/NetSocket.h           \
     $$PWD/Gui/mainwindow.h \
     Audio/MainLoopLocker.h \
-    Audio/PulseAudioHandler.h
+    Audio/PulseAudioHandler.h \
+    Settings/Settings.h
 
 SOURCES +=                              \
     $$PWD/Network/NetSocket.cpp         \
@@ -49,7 +50,8 @@ SOURCES +=                              \
     Audio/MainLoopLocker.cpp \
     Audio/PulseAudioHandler.cpp \
     Audio/example.cpp \
-    PA_DocumentationTranslate.cpp
+    PA_DocumentationTranslate.cpp \
+    Settings/Settings.cpp
 
 
 FORMS += \

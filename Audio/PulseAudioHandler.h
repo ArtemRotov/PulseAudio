@@ -6,6 +6,7 @@
 class pa_threaded_mainloop;
 class pa_mainloop_api;
 class pa_context;
+class pa_operation;
 
 namespace pulse
 {
@@ -15,6 +16,7 @@ namespace pulse
         typedef     pa_threaded_mainloop*   MainLoopPtr;
         typedef     pa_mainloop_api*        MainLoopApiPtr;
         typedef     pa_context*             ContextPtr;
+        typedef     pa_operation*           OperationPtr;
 
         // Singleton notatin
         PulseAudioHandler();

@@ -1,5 +1,6 @@
 #include "Gui/mainwindow.h"
 
+#include <QSettings>
 #include <QApplication>
 #include <QDebug>
 #include <vector>
@@ -8,6 +9,7 @@
 #include <mutex>
 #include <pulse/pulseaudio.h>
 #include <Network/NetSocket.h>
+#include <Settings/Settings.h>
 
 #define RATE 48000
 #define addr addr_work
@@ -195,7 +197,12 @@ void stream_state_cb(pa_stream *s, void *mainloop)
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc,argv);
+    QApplication::setOrganizationName( "Vniira" );
+    QApplication::setApplicationName( "RadioSim" );
+    pulse::Settings::instance(QSettings().fileName());
 
+    auto bb = pulse::Settings::value(pulse::Settings::bufferFragSize).toInt();
+    auto sa = pulse::Settings::value(pulse::Settings::pulseApplicationName).toString();
     sock = new NetSocket(addr,1234);
     mloop = pa_threaded_mainloop_new();
 
