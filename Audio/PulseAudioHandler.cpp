@@ -1,6 +1,7 @@
 #include <pulse/pulseaudio.h>
 #include "PulseAudioHandler.h"
 #include "MainLoopLocker.h"
+#include "Settings/Settings.h"
 
 using namespace pulse;
 
@@ -34,7 +35,9 @@ void PulseAudioHandler::init()
 
     m_mainLoopApi = pa_threaded_mainloop_get_api(m_mainLoop);
 
-    m_context = pa_context_new_with_proplist(m_mainLoopApi, Name.c_str(), nullptr);
+    m_context = pa_context_new_with_proplist(m_mainLoopApi,
+    Settings::value(Settings::pulseApplicationName).toString().toStdString().c_str(),
+                                             nullptr);
 
     pa_context_set_state_callback(m_context,
                                   PulseAudioHandler::stateChanged, nullptr);

@@ -25,8 +25,6 @@ namespace pulse
 
         ~PulseAudioHandler();
 
-        const std::string Name = "PA_Handler";
-
         template <typename T>
         static void deviceInfo(ContextPtr context, const T* info, int eol, void *udata);
         static void stateChanged(ContextPtr context, void* userData);

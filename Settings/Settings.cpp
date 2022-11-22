@@ -6,19 +6,20 @@ using namespace pulse;
 
 const QString Settings::pulseApplicationName = "pulseApplicationName";
 
-const QString Settings::sampleFormat = "sample/Format";
-const QString Settings::sampleRate = "sample/Rate";
-const QString Settings::sampleChannels = "sample/Channels";
+const QString Settings::sampleFormat = "sample/format";
+const QString Settings::sampleRate = "sample/rate";
+const QString Settings::sampleChannels = "sample/channels";
 
-const QString Settings::bufferMaxLength = "buffer/MaxLength";
-const QString Settings::bufferTLength = "buffer/TLength";
-const QString Settings::bufferPrebuf = "buffer/Prebuf";
-const QString Settings::bufferMinReq = "buffer/MinReq";
-const QString Settings::bufferFragSize = "buffer/FragSize";
+const QString Settings::bufferMaxLength = "buffer/maxLength";
+const QString Settings::bufferTLength = "buffer/tLength";
+const QString Settings::bufferPrebuf = "buffer/prebuf";
+const QString Settings::bufferMinReq = "buffer/minReq";
+const QString Settings::bufferFragSize = "buffer/fragSize";
 
 
 Settings::Settings(const QString &fileName)
     : m_settings (fileName, QSettings::IniFormat)
+    , m_defaults()
 {
     initDefaults();
 }
@@ -33,7 +34,7 @@ void Settings::initDefaults()
 {
     setDefaultValue(pulseApplicationName, "RadioSim");
 
-    setDefaultValue(sampleFormat, "PA_SAMPLE_U8");
+    setDefaultValue(sampleFormat, 0);
     setDefaultValue(sampleRate, 48000);
     setDefaultValue(sampleChannels, 2);
 

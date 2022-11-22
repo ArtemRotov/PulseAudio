@@ -39,6 +39,7 @@ HEADERS +=                              \
     $$PWD/Gui/mainwindow.h \
     Audio/MainLoopLocker.h \
     Audio/PulseAudioHandler.h \
+    Audio/SampleSpecification.h \
     Settings/Settings.h
 
 SOURCES +=                              \
@@ -49,6 +50,7 @@ SOURCES +=                              \
     $$PWD/main.cpp \
     Audio/MainLoopLocker.cpp \
     Audio/PulseAudioHandler.cpp \
+    Audio/SampleSpecification.cpp \
     Audio/example.cpp \
     PA_DocumentationTranslate.cpp \
     Settings/Settings.cpp

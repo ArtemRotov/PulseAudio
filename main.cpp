@@ -199,10 +199,7 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc,argv);
     QApplication::setOrganizationName( "Vniira" );
     QApplication::setApplicationName( "RadioSim" );
-    pulse::Settings::instance(QSettings().fileName());
 
-    auto bb = pulse::Settings::value(pulse::Settings::bufferFragSize).toInt();
-    auto sa = pulse::Settings::value(pulse::Settings::pulseApplicationName).toString();
     sock = new NetSocket(addr,1234);
     mloop = pa_threaded_mainloop_new();
 
