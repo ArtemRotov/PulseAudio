@@ -16,6 +16,7 @@ const QString addr_work = "192.9.206.60";
 const QString addr_home = "192.168.0.102";
 
 pa_threaded_mainloop *mloop = nullptr;
+pa_channel_map* map = nullptr;
 
 std::mutex mutexMainBuff;
 uint32_t lenMainBuff = 0;
@@ -148,19 +149,11 @@ void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 
 void on_i_complete(pa_stream *stream, size_t nbytes, void *udata)
 {
-    static int k = 0;
-    k++;
-    qDebug() <<"REC: " << k;
     while (true)
     {
         const void* data;
         size_t n;
         pa_stream_peek(stream, &data, &n);
-//        if (k < 1000 || (k > 6000 && k < 9000))
-//        {
-//            pa_stream_drop(stream);
-//            break;
-//        }
         if (data == NULL && n == 0)
             return;  // Buffer is empty. Process more events
         else if (data == NULL && n != 0)
@@ -196,6 +189,7 @@ void stream_state_cb(pa_stream *s, void *mainloop)
 {
     pa_threaded_mainloop_signal((pa_threaded_mainloop*)mainloop, 0);
 }
+
 
 
 int main(int argc, char *argv[])
@@ -249,10 +243,11 @@ int main(int argc, char *argv[])
     spec.format = PA_SAMPLE_U8;
     spec.rate = RATE;
     spec.channels = 2;
-    pa_channel_map map;     //Тут смотреть левый правый похоже
-    pa_channel_map_init_stereo(&map);
-    map.map[0] = PA_CHANNEL_POSITION_FRONT_LEFT;   //PA_CHANNEL_POSITION_FRONT_LEFT
-    map.map[1] = PA_CHANNEL_POSITION_FRONT_RIGHT;    //PA_CHANNEL_POSITION_FRONT_RIGHT
+    //pa_channel_map map;     //Тут смотреть левый правый похоже
+    map = new pa_channel_map;
+    pa_channel_map_init_stereo(map);
+    map->map[0] = PA_CHANNEL_POSITION_FRONT_LEFT;   //PA_CHANNEL_POSITION_FRONT_LEFT
+    map->map[1] = PA_CHANNEL_POSITION_FRONT_RIGHT;    //PA_CHANNEL_POSITION_FRONT_RIGHT
 
     pa_buffer_attr attr;
     attr.maxlength = (uint32_t) -1;
@@ -283,7 +278,7 @@ int main(int argc, char *argv[])
     // [1]
 
 
-    pa_stream *stream = pa_stream_new(ctx, "MyAudioProjectRead", &spec, &map);
+    pa_stream *stream = pa_stream_new(ctx, "MyAudioProjectRead", &spec, map);
     void* dataRead = nullptr;
     pa_stream_set_state_callback(stream, stream_state_cb, mloop);
     pa_stream_set_read_callback(stream, on_i_complete, dataRead);
@@ -302,7 +297,7 @@ int main(int argc, char *argv[])
         pa_threaded_mainloop_wait(mloop);
     }
 
-    pa_stream *streamOut = pa_stream_new(ctx, "MyAudioProjectOut", &spec, &map);
+    pa_stream *streamOut = pa_stream_new(ctx, "MyAudioProjectOut", &spec, map);
     void* dataOut = nullptr;
     pa_stream_set_write_callback(streamOut, on_o_complete, mloop);
     pa_stream_set_state_callback(streamOut, stream_state_cb, mloop);
