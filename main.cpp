@@ -48,27 +48,27 @@ void on_state_change1(pa_context *context, void *userdata)
     }
 }
 
-//void on_dev_sink(pa_context *c, const pa_sink_info *info, int eol, void *udata)
-//{
-//    if (eol != 0) {
-//        pa_threaded_mainloop_signal(mloop, 0);
-//        return;
-//    }
+void on_dev_sink(pa_context *c, const pa_sink_info *info, int eol, void *udata)
+{
+    if (eol != 0) {
+        pa_threaded_mainloop_signal(mloop, 0);
+        return;
+    }
 
-//    const char *device_id = info->name;
-//    qDebug() << "on_dev_sink:   " << device_id;
-//}
+    const char *device_id = info->name;
+    qDebug() << "on_dev_sink:   " << device_id;
+}
 
-//void on_dev_source(pa_context *c, const pa_source_info *info, int eol, void *udata)
-//{
-//    if (eol != 0) {
-//        pa_threaded_mainloop_signal(mloop, 0);
-//        return;
-//    }
+void on_dev_source(pa_context *c, const pa_source_info *info, int eol, void *udata)
+{
+    if (eol != 0) {
+        pa_threaded_mainloop_signal(mloop, 0);
+        return;
+    }
 
-//    const char *device_id = info->name;
-//    qDebug() << "on_dev_source:   " << device_id;
-//}
+    const char *device_id = info->name;
+    qDebug() << "on_dev_source:   " << device_id;
+}
 
 void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 {
@@ -204,36 +204,36 @@ int main(int argc, char *argv[])
     pa_mainloop_api *apiRead = pa_threaded_mainloop_get_api(mloop);
     pa_context *ctx = pa_context_new_with_proplist(apiRead, "123", nullptr);
     void *udataRead = nullptr;
-    pa_context_set_state_callback(ctx, on_state_change1, udataRead);
+    pa_context_set_state_callback(ctx, on_state_change1, nullptr);
     pa_context_connect(ctx, nullptr, PA_CONTEXT_NOAUTOSPAWN, nullptr);
     pa_threaded_mainloop_wait(mloop); //wait connect
 
 
 //-----------Устройства------------------
-//    pa_operation *operationSink;
-//    pa_operation *operationSource;
-//    void* udataSink = nullptr;
-//    void* udataSource = nullptr;
+    pa_operation *operationSink;
+    pa_operation *operationSource;
+    void* udataSink = nullptr;
+    void* udataSource = nullptr;
 
-//    operationSink = pa_context_get_sink_info_list(ctx, on_dev_sink, udataSink);
-//    while (true)
-//    {
-//        int result = pa_operation_get_state(operationSink);
-//        if (result == PA_OPERATION_DONE || result == PA_OPERATION_CANCELLED)
-//            break;
-//        pa_threaded_mainloop_wait(mloop);
-//    }
-//    pa_operation_unref(operationSink);
+    operationSink = pa_context_get_sink_info_list(ctx, on_dev_sink, nullptr);
+    while (true)
+    {
+        int result = pa_operation_get_state(operationSink);
+        if (result == PA_OPERATION_DONE || result == PA_OPERATION_CANCELLED)
+            break;
+        pa_threaded_mainloop_wait(mloop);
+    }
+    pa_operation_unref(operationSink);
 
-//    operationSource = pa_context_get_source_info_list(ctx, on_dev_source, udataSource);
-//    while (true)
-//    {
-//        int result = pa_operation_get_state(operationSource);
-//        if (result == PA_OPERATION_DONE || result == PA_OPERATION_CANCELLED)
-//            break;
-//        pa_threaded_mainloop_wait(mloop);
-//    }
-//    pa_operation_unref(operationSource);
+    operationSource = pa_context_get_source_info_list(ctx, on_dev_source, nullptr);
+    while (true)
+    {
+        int result = pa_operation_get_state(operationSource);
+        if (result == PA_OPERATION_DONE || result == PA_OPERATION_CANCELLED)
+            break;
+        pa_threaded_mainloop_wait(mloop);
+    }
+    pa_operation_unref(operationSource);
 //-----------Устройства------------------
 
 

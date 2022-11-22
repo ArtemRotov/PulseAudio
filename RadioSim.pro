@@ -37,6 +37,7 @@ LIBS += -lpulse-simple
 HEADERS +=                              \
     $$PWD/Network/NetSocket.h           \
     $$PWD/Gui/mainwindow.h \
+    Audio/MainLoopLocker.h \
     Audio/PulseAudioHandler.h
 
 SOURCES +=                              \
@@ -45,6 +46,7 @@ SOURCES +=                              \
     $$PWD/Audio/examplePCMPlayback.cpp  \
     $$PWD/Audio/main2.cpp               \
     $$PWD/main.cpp \
+    Audio/MainLoopLocker.cpp \
     Audio/PulseAudioHandler.cpp \
     Audio/example.cpp \
     PA_DocumentationTranslate.cpp
