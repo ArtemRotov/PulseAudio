@@ -2,6 +2,9 @@
 #include "PulseAudioHandler.h"
 #include "MainLoopLocker.h"
 #include "Settings/Settings.h"
+#include "SampleSpecification.h"
+#include "BufferAttributes.h"
+
 
 using namespace pulse;
 
@@ -11,6 +14,8 @@ PulseAudioHandler::MainLoopPtr PulseAudioHandler::m_mainLoop = nullptr;
 PulseAudioHandler::PulseAudioHandler()
     : m_mainLoopApi(nullptr)
     , m_context(nullptr)
+    , m_sampleSpec(new pulse::SampleSpecification)
+    , m_bufferAttr(new BufferAttributes)
 {
     init();
 }

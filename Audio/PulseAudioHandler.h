@@ -8,8 +8,13 @@ class pa_mainloop_api;
 class pa_context;
 class pa_operation;
 
+
+
 namespace pulse
 {
+    class SampleSpecification;
+    class BufferAttributes;
+
 
     class PulseAudioHandler
     {
@@ -40,6 +45,9 @@ namespace pulse
         static MainLoopPtr  m_mainLoop;
         MainLoopApiPtr      m_mainLoopApi;
         ContextPtr          m_context;
+
+        SampleSpecification*    m_sampleSpec;
+        BufferAttributes*       m_bufferAttr;
 
     };
 

@@ -16,7 +16,7 @@ namespace pulse
         ~Settings() = default;
 
     public:
-        static Settings &instance(const QString &fileName = "");
+        static Settings &instance();
         static QVariant value(const QString &key, const QVariant &def = QVariant());
 
         static const QString pulseApplicationName;

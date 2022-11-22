@@ -24,9 +24,9 @@ Settings::Settings(const QString &fileName)
     initDefaults();
 }
 
-Settings &Settings::instance(const QString &fileName)
+Settings &Settings::instance()
 {
-    static Settings theSingleInstance(fileName);
+    static Settings theSingleInstance(QSettings().fileName());
     return theSingleInstance;
 }
 
@@ -38,7 +38,7 @@ void Settings::initDefaults()
     setDefaultValue(sampleRate, 48000);
     setDefaultValue(sampleChannels, 2);
 
-    setDefaultValue(bufferMaxLength, "default");
+    setDefaultValue(bufferMaxLength, (uint32_t) - 1);
     setDefaultValue(bufferTLength, 1024);
     setDefaultValue(bufferPrebuf, 0);
     setDefaultValue(bufferMinReq, 1024);

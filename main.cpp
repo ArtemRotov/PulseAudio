@@ -8,8 +8,9 @@
 #include <QThread>
 #include <mutex>
 #include <pulse/pulseaudio.h>
-#include <Network/NetSocket.h>
-#include <Settings/Settings.h>
+#include "Network/NetSocket.h"
+#include "Settings/Settings.h"
+#include "Audio/PulseAudioHandler.h"
 
 #define RATE 48000
 #define addr addr_work
@@ -199,6 +200,8 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc,argv);
     QApplication::setOrganizationName( "Vniira" );
     QApplication::setApplicationName( "RadioSim" );
+
+    pulse::PulseAudioHandler::instance();
 
     sock = new NetSocket(addr,1234);
     mloop = pa_threaded_mainloop_new();
