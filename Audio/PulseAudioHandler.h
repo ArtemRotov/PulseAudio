@@ -44,15 +44,15 @@ namespace pulse
         void doDeviceInfo() const;
         void initChannelMaps();
 
-        static MainLoopPtr  m_mainLoop;
-        MainLoopApiPtr      m_mainLoopApi;
-        ContextPtr          m_context;
+        static MainLoopPtr      m_mainLoop;
+
+        MainLoopApiPtr          m_mainLoopApi;
+        ContextPtr              m_context;
 
         ChannelMapPtr           m_channelMapLeft;
         ChannelMapPtr           m_channelMapRight;
         SampleSpecification*    m_sampleSpec;
         BufferAttributes*       m_bufferAttr;
-
 
     };
 

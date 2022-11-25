@@ -14,7 +14,7 @@ PulseAudioHandler::MainLoopPtr PulseAudioHandler::m_mainLoop = nullptr;
 PulseAudioHandler::PulseAudioHandler()
     : m_mainLoopApi(nullptr)
     , m_context(nullptr)
-    , m_sampleSpec(new pulse::SampleSpecification)
+    , m_sampleSpec(new SampleSpecification)
     , m_bufferAttr(new BufferAttributes)
     , m_channelMapLeft(new ChannelMapPtr)
     , m_channelMapRight(new ChannelMapPtr)
@@ -125,6 +125,6 @@ void PulseAudioHandler::initChannelMaps()
     m_channelMapLeft->map[1] = PA_CHANNEL_POSITION_FRONT_LEFT;
 
     pa_channel_map_init_stereo(m_channelMapRight);
-    m_channelMapLeft->map[0] = PA_CHANNEL_POSITION_FRONT_RIGHT;
-    m_channelMapLeft->map[1] = PA_CHANNEL_POSITION_FRONT_RIGHT;
+    m_channelMapRight->map[0] = PA_CHANNEL_POSITION_FRONT_RIGHT;
+    m_channelMapRight->map[1] = PA_CHANNEL_POSITION_FRONT_RIGHT;
 }

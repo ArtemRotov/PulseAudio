@@ -36,26 +36,25 @@ LIBS += -lpulse-simple
 
 HEADERS +=                              \
     $$PWD/Network/NetSocket.h           \
-    $$PWD/Gui/mainwindow.h \
-    Audio/BufferAttributes.h \
-    Audio/MainLoopLocker.h \
-    Audio/PulseAudioHandler.h \
-    Audio/SampleSpecification.h \
-    Settings/Settings.h
+    $$PWD/Gui/mainwindow.h              \
+    $$PWD/Audio/BufferAttributes.h      \
+    $$PWD/Audio/MainLoopLocker.h        \
+    $$PWD/Audio/PulseAudioHandler.h     \
+    $$PWD/Audio/SampleSpecification.h   \
+    $$PWD/Settings/Settings.h
 
 SOURCES +=                              \
     $$PWD/Network/NetSocket.cpp         \
     $$PWD/Gui/mainwindow.cpp            \
     $$PWD/Audio/examplePCMPlayback.cpp  \
-    $$PWD/Audio/main2.cpp               \
-    $$PWD/main.cpp \
-    Audio/BufferAttributes.cpp \
-    Audio/MainLoopLocker.cpp \
-    Audio/PulseAudioHandler.cpp \
-    Audio/SampleSpecification.cpp \
-    Audio/example.cpp \
-    PA_DocumentationTranslate.cpp \
-    Settings/Settings.cpp
+    $$PWD/main.cpp                      \
+    $$PWD/Audio/BufferAttributes.cpp    \
+    $$PWD/Audio/MainLoopLocker.cpp      \
+    $$PWD/Audio/PulseAudioHandler.cpp   \
+    $$PWD/Audio/SampleSpecification.cpp \
+    $$PWD/Audio/example.cpp             \
+    $$PWD/PA_DocumentationTranslate.cpp \
+    $$PWD/Settings/Settings.cpp
 
 
 FORMS += \
