@@ -16,6 +16,8 @@ PulseAudioHandler::PulseAudioHandler()
     , m_context(nullptr)
     , m_sampleSpec(new pulse::SampleSpecification)
     , m_bufferAttr(new BufferAttributes)
+    , m_channelMapLeft(new ChannelMapPtr)
+    , m_channelMapRight(new ChannelMapPtr)
 {
     init();
 }
@@ -29,6 +31,13 @@ PulseAudioHandler::~PulseAudioHandler()
 
     pa_threaded_mainloop_stop(m_mainLoop);
     pa_threaded_mainloop_free(m_mainLoop);
+
+
+
+    delete m_channelMapRight;
+    delete m_channelMapLeft;
+    delete m_bufferAttr;
+    delete m_sampleSpec;
 }
 
 void PulseAudioHandler::init()
@@ -49,6 +58,7 @@ void PulseAudioHandler::init()
     pa_context_connect(m_context, nullptr, PA_CONTEXT_NOAUTOSPAWN, nullptr);
     pa_threaded_mainloop_wait(m_mainLoop);
 
+    initChannelMaps();
     doDeviceInfo();
 }
 
@@ -106,4 +116,15 @@ void PulseAudioHandler::doDeviceInfo() const
         pa_threaded_mainloop_wait(m_mainLoop);
     }
     pa_operation_unref(operationSource);
+}
+
+void PulseAudioHandler::initChannelMaps()
+{
+    pa_channel_map_init_stereo(m_channelMapLeft);
+    m_channelMapLeft->map[0] = PA_CHANNEL_POSITION_FRONT_LEFT;
+    m_channelMapLeft->map[1] = PA_CHANNEL_POSITION_FRONT_LEFT;
+
+    pa_channel_map_init_stereo(m_channelMapRight);
+    m_channelMapLeft->map[0] = PA_CHANNEL_POSITION_FRONT_RIGHT;
+    m_channelMapLeft->map[1] = PA_CHANNEL_POSITION_FRONT_RIGHT;
 }

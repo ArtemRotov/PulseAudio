@@ -8,7 +8,7 @@ namespace pulse
 
     class Settings
     {
-        // Singleton notatin
+        // Singleton notation
         explicit Settings(const QString &fileName = "");
         Settings(const Settings& );
         Settings& operator=(const Settings& );

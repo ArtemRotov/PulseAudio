@@ -7,7 +7,7 @@ class pa_threaded_mainloop;
 class pa_mainloop_api;
 class pa_context;
 class pa_operation;
-
+class pa_channel_map;
 
 
 namespace pulse
@@ -22,8 +22,9 @@ namespace pulse
         typedef     pa_mainloop_api*        MainLoopApiPtr;
         typedef     pa_context*             ContextPtr;
         typedef     pa_operation*           OperationPtr;
+        typedef     pa_channel_map*         ChannelMapPtr;
 
-        // Singleton notatin
+        // Singleton notation
         PulseAudioHandler();
         PulseAudioHandler(const PulseAudioHandler& );
         PulseAudioHandler& operator=(const PulseAudioHandler& );
@@ -41,13 +42,17 @@ namespace pulse
     private:
         void init();
         void doDeviceInfo() const;
+        void initChannelMaps();
 
         static MainLoopPtr  m_mainLoop;
         MainLoopApiPtr      m_mainLoopApi;
         ContextPtr          m_context;
 
+        ChannelMapPtr           m_channelMapLeft;
+        ChannelMapPtr           m_channelMapRight;
         SampleSpecification*    m_sampleSpec;
         BufferAttributes*       m_bufferAttr;
+
 
     };
 
