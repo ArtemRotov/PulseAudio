@@ -22,6 +22,7 @@ namespace pulse
         typedef     pa_mainloop_api*        MainLoopApiPtr;
         typedef     pa_context*             ContextPtr;
         typedef     pa_operation*           OperationPtr;
+        typedef     pa_channel_map          ChannelMap;
         typedef     pa_channel_map*         ChannelMapPtr;
 
         // Singleton notation

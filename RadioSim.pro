@@ -32,7 +32,7 @@ INCLUDEPATH += $${MOC_DIR}
 
 
 LIBS += -lpulse
-LIBS += -lpulse-simple
+#LIBS += -lpulse-simple
 
 HEADERS +=                              \
     $$PWD/Network/NetSocket.h           \
@@ -46,13 +46,12 @@ HEADERS +=                              \
 SOURCES +=                              \
     $$PWD/Network/NetSocket.cpp         \
     $$PWD/Gui/mainwindow.cpp            \
-    $$PWD/Audio/examplePCMPlayback.cpp  \
     $$PWD/main.cpp                      \
     $$PWD/Audio/BufferAttributes.cpp    \
     $$PWD/Audio/MainLoopLocker.cpp      \
     $$PWD/Audio/PulseAudioHandler.cpp   \
     $$PWD/Audio/SampleSpecification.cpp \
-    $$PWD/Audio/example.cpp             \
+    $$PWD/example.cpp                   \
     $$PWD/PA_DocumentationTranslate.cpp \
     $$PWD/Settings/Settings.cpp
 

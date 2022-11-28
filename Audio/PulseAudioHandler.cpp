@@ -14,10 +14,10 @@ PulseAudioHandler::MainLoopPtr PulseAudioHandler::m_mainLoop = nullptr;
 PulseAudioHandler::PulseAudioHandler()
     : m_mainLoopApi(nullptr)
     , m_context(nullptr)
+    , m_channelMapLeft(new ChannelMap)
+    , m_channelMapRight(new ChannelMap)
     , m_sampleSpec(new SampleSpecification)
     , m_bufferAttr(new BufferAttributes)
-    , m_channelMapLeft(new ChannelMapPtr)
-    , m_channelMapRight(new ChannelMapPtr)
 {
     init();
 }
