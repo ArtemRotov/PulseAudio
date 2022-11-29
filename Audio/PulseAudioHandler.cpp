@@ -34,10 +34,11 @@ PulseAudioHandler::~PulseAudioHandler()
 
 
 
-    delete m_channelMapRight;
+
     delete m_channelMapLeft;
-    delete m_bufferAttr;
+    delete m_channelMapRight;
     delete m_sampleSpec;
+    delete m_bufferAttr;
 }
 
 void PulseAudioHandler::init()

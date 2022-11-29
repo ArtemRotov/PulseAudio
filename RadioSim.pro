@@ -41,6 +41,7 @@ HEADERS +=                              \
     $$PWD/Audio/MainLoopLocker.h        \
     $$PWD/Audio/PulseAudioHandler.h     \
     $$PWD/Audio/SampleSpecification.h   \
+    $$PWD/Audio/IStream.h               \
     $$PWD/Settings/Settings.h
 
 SOURCES +=                              \
