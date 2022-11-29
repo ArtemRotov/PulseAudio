@@ -9,8 +9,8 @@ namespace pulse
         explicit IStream() = default;
         virtual ~IStream() = default;
 
-        virtual void resume();
-        virtual void pause();
+        virtual void resume() = 0;
+        virtual void pause() = 0;
 
     protected:
     private:
