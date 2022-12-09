@@ -78,6 +78,20 @@ void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 //    if (requested_bytes > 1500)
 //        pa_stream_flush(stream,nullptr,nullptr);
 
+    static int as = 0;
+    as ++;
+    qDebug() << as;
+    if (as == 800)
+    {
+        map->map[0] = PA_CHANNEL_POSITION_FRONT_RIGHT;   //PA_CHANNEL_POSITION_FRONT_LEFT
+        map->map[1] = PA_CHANNEL_POSITION_FRONT_RIGHT;    //PA_CHANNEL_POSITION_FRONT_RIGHT
+    }
+    else if ( as == 1500)
+    {
+        map->map[0] = PA_CHANNEL_POSITION_FRONT_LEFT;   //PA_CHANNEL_POSITION_FRONT_LEFT
+        map->map[1] = PA_CHANNEL_POSITION_FRONT_LEFT;    //PA_CHANNEL_POSITION_FRONT_RIG
+    }
+
     std::unique_lock<std::mutex> lock(mutexMainBuff);
     //qDebug() << "Buffer size = " << queueBuff.size();
     if (queueBuff.empty())
@@ -254,7 +268,7 @@ int main(int argc, char *argv[])
     map = new pa_channel_map;
     pa_channel_map_init_stereo(map);
     map->map[0] = PA_CHANNEL_POSITION_FRONT_LEFT;   //PA_CHANNEL_POSITION_FRONT_LEFT
-    map->map[1] = PA_CHANNEL_POSITION_FRONT_RIGHT;    //PA_CHANNEL_POSITION_FRONT_RIGHT
+    map->map[1] = PA_CHANNEL_POSITION_FRONT_LEFT;    //PA_CHANNEL_POSITION_FRONT_RIGHT
 
     pa_buffer_attr attr;
     attr.maxlength = (uint32_t) -1;

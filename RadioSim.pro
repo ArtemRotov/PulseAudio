@@ -42,7 +42,9 @@ HEADERS +=                              \
     $$PWD/Audio/PulseAudioHandler.h     \
     $$PWD/Audio/SampleSpecification.h   \
     $$PWD/Audio/IStream.h               \
-    $$PWD/Settings/Settings.h
+    $$PWD/Settings/Settings.h \
+    Audio/PlaybackStream.h \
+    Audio/RecordingStream.h
 
 SOURCES +=                              \
     $$PWD/Network/NetSocket.cpp         \
@@ -54,7 +56,9 @@ SOURCES +=                              \
     $$PWD/Audio/SampleSpecification.cpp \
     $$PWD/example.cpp                   \
     $$PWD/PA_DocumentationTranslate.cpp \
-    $$PWD/Settings/Settings.cpp
+    $$PWD/Settings/Settings.cpp \
+    Audio/PlaybackStream.cpp \
+    Audio/RecordingStream.cpp
 
 
 FORMS += \

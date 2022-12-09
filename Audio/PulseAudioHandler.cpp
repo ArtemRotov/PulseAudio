@@ -32,9 +32,6 @@ PulseAudioHandler::~PulseAudioHandler()
     pa_threaded_mainloop_stop(m_mainLoop);
     pa_threaded_mainloop_free(m_mainLoop);
 
-
-
-
     delete m_channelMapLeft;
     delete m_channelMapRight;
     delete m_sampleSpec;
