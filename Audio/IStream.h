@@ -1,6 +1,7 @@
+#pragma once
+
 namespace pulse
 {
-
     // Interface class, for a possible connection to a Terminal
 
     class IStream

@@ -1,5 +1,4 @@
-#include <pulse/sample.h>
-
+#include "def.h"
 
 namespace pulse
 {
@@ -9,7 +8,7 @@ namespace pulse
         SampleSpecification();
         ~SampleSpecification() = default;
 
-        pa_sample_spec get() const;
+        SampleSpecPtr get() const;
 
         uint8_t format()    const;
         uint32_t rate()     const;
@@ -17,9 +16,11 @@ namespace pulse
 
     protected:
     private:
-        const uint8_t     m_format;
-        const uint32_t    m_rate;
-        const uint8_t     m_channels;
+        const uint8_t   m_format;
+        const uint32_t  m_rate;
+        const uint8_t   m_channels;
+
+        SampleSpecPtr   m_sampleSpec;
     };
 
 }

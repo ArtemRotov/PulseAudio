@@ -1,5 +1,4 @@
-#include <pulse/def.h>
-
+#include "def.h"
 
 namespace pulse
 {
@@ -8,9 +7,9 @@ namespace pulse
     {
     public:
         BufferAttributes();
-        ~BufferAttributes() = default;
+        ~BufferAttributes();
 
-        pa_buffer_attr get()    const;
+        BufferAttrPtr get()    const;
 
         uint32_t maxLength()    const;
         uint32_t tLength()      const;
@@ -25,6 +24,8 @@ namespace pulse
         const uint32_t  m_prebuf;
         const uint32_t  m_minReq;
         const uint32_t  m_fragSize;
+
+        BufferAttrPtr m_buffer;
     };
 
 }

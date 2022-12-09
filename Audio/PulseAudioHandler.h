@@ -1,30 +1,16 @@
+#pragma once
 #include <QCoreApplication>
 #include <QDebug>
 #include <string>
+#include <pulse/thread-mainloop.h>
 
-
-class pa_threaded_mainloop;
-class pa_mainloop_api;
-class pa_context;
-class pa_operation;
-class pa_channel_map;
+#include "def.h"
 
 
 namespace pulse
 {
-    class SampleSpecification;
-    class BufferAttributes;
-
-
     class PulseAudioHandler
     {
-        typedef     pa_threaded_mainloop*   MainLoopPtr;
-        typedef     pa_mainloop_api*        MainLoopApiPtr;
-        typedef     pa_context*             ContextPtr;
-        typedef     pa_operation*           OperationPtr;
-        typedef     pa_channel_map          ChannelMap;
-        typedef     pa_channel_map*         ChannelMapPtr;
-
         // Singleton notation
         PulseAudioHandler();
         PulseAudioHandler(const PulseAudioHandler& );
@@ -39,6 +25,8 @@ namespace pulse
     public:
         static PulseAudioHandler& instance();
 
+        MainLoopPtr mainLoop() const;
+
     protected:
     private:
         void init();
@@ -50,6 +38,7 @@ namespace pulse
         MainLoopApiPtr          m_mainLoopApi;
         ContextPtr              m_context;
 
+        ChannelMapPtr           m_channelMapStereo;
         ChannelMapPtr           m_channelMapLeft;
         ChannelMapPtr           m_channelMapRight;
         SampleSpecification*    m_sampleSpec;

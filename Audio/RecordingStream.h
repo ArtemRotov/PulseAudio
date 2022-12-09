@@ -1,18 +1,21 @@
-#include "IStream.h"
+#pragma once
+#include "BasicStream.h"
 
 
 namespace pulse
 {
-
-    class RecordingStream : public IStream
+    class RecordingStream : public BasicStream
     {
     public:
-        RecordingStream();
+        explicit RecordingStream(ContextPtr ctx, SampleSpecification* sample,
+                                 BufferAttributes* buffAttr, ChannelMapPtr map);
         ~RecordingStream();
+
+        void resume() override;
+        void pause() override;
 
     protected:
     private:
-
     };
 
 

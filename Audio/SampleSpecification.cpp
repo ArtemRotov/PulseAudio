@@ -1,3 +1,5 @@
+#include <pulse/sample.h>
+
 #include "SampleSpecification.h"
 #include "Settings/Settings.h"
 
@@ -8,18 +10,17 @@ SampleSpecification::SampleSpecification()
     : m_format(Settings::value(Settings::sampleFormat).toInt())
     , m_rate(Settings::value(Settings::sampleRate).toInt())
     , m_channels(Settings::value(Settings::sampleChannels).toInt())
+    , m_sampleSpec(new pa_sample_spec)
 {
+    m_sampleSpec->format = (pa_sample_format_t)m_format;
+    m_sampleSpec->rate = m_rate;
+    m_sampleSpec->channels = m_channels;
 
 }
 
-pa_sample_spec SampleSpecification::get() const
+SampleSpecPtr SampleSpecification::get() const
 {
-    pa_sample_spec result;
-    result.format = (pa_sample_format_t)m_format;
-    result.rate = m_rate;
-    result.channels = m_channels;
-
-    return result;
+    return m_sampleSpec;
 }
 
 uint8_t SampleSpecification::format() const

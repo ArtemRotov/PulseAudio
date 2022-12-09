@@ -43,8 +43,10 @@ HEADERS +=                              \
     $$PWD/Audio/SampleSpecification.h   \
     $$PWD/Audio/IStream.h               \
     $$PWD/Settings/Settings.h \
+    Audio/BasicStream.h \
     Audio/PlaybackStream.h \
-    Audio/RecordingStream.h
+    Audio/RecordingStream.h \
+    def.h
 
 SOURCES +=                              \
     $$PWD/Network/NetSocket.cpp         \
@@ -57,6 +59,7 @@ SOURCES +=                              \
     $$PWD/example.cpp                   \
     $$PWD/PA_DocumentationTranslate.cpp \
     $$PWD/Settings/Settings.cpp \
+    Audio/BasicStream.cpp \
     Audio/PlaybackStream.cpp \
     Audio/RecordingStream.cpp
 

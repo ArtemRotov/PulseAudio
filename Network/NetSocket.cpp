@@ -60,21 +60,6 @@ void NetSocket::readyRead()
     {
         queueBuff.push((buffer.data())[i]);
     }
-
-//    //qDebug() << "readyRead socket";
-//    QByteArray buffer;
-//    buffer.resize(1024);
-
-//    int len  = m_sock->readDatagram(buffer.data(), buffer.size());
-//    qDebug() << "Readed " << len << " bytes (and removed old)";
-//    if (len < 0)
-//        return;
-
-//    std::lock_guard<std::mutex> lock(mutexMainBuff);
-//    lenMainBuff = len;
-//    delete [] mainBuff;
-//    mainBuff = new uint8_t[lenMainBuff];
-//    memcpy(mainBuff, buffer.data(), lenMainBuff);
 }
 
 void NetSocket::error(QAbstractSocket::SocketError err )

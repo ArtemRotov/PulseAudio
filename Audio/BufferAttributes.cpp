@@ -11,21 +11,23 @@ BufferAttributes::BufferAttributes()
     , m_prebuf(Settings::value(Settings::bufferPrebuf).toInt())
     , m_minReq(Settings::value(Settings::bufferMinReq).toInt())
     , m_fragSize(Settings::value(Settings::bufferFragSize).toInt())
+    , m_buffer(new pa_buffer_attr)
 {
-
+    m_buffer->maxlength = m_maxLength;
+    m_buffer->tlength = m_tLength;
+    m_buffer->prebuf = m_prebuf;
+    m_buffer->minreq = m_minReq;
+    m_buffer->fragsize = m_fragSize;
 }
 
-
-pa_buffer_attr BufferAttributes::get() const
+BufferAttributes::~BufferAttributes()
 {
-    pa_buffer_attr result;
-    result.maxlength = m_maxLength;
-    result.tlength = m_tLength;
-    result.prebuf = m_prebuf;
-    result.minreq = m_minReq;
-    result.fragsize = m_fragSize;
+    delete m_buffer;
+}
 
-    return result;
+BufferAttrPtr BufferAttributes::get() const
+{
+    return m_buffer;
 }
 
 uint32_t BufferAttributes::maxLength() const

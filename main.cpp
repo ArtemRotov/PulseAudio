@@ -93,7 +93,7 @@ void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
     }
 
     std::unique_lock<std::mutex> lock(mutexMainBuff);
-    //qDebug() << "Buffer size = " << queueBuff.size();
+
     if (queueBuff.empty())
     {
         pa_stream_flush(stream,nullptr,nullptr);
@@ -298,12 +298,11 @@ int main(int argc, char *argv[])
     const char *device_id = nullptr;
     // [1]
 
-
     pa_stream *stream = pa_stream_new(ctx, "MyAudioProjectRead", &spec, map);
     void* dataRead = nullptr;
     pa_stream_set_state_callback(stream, stream_state_cb, mloop);
     pa_stream_set_read_callback(stream, on_i_complete, dataRead);
-    if (pa_stream_connect_record(stream, device_id, &attr, PA_STREAM_ADJUST_LATENCY) != 0)
+    if (pa_stream_connect_record(stream, device_id, &attr, pa_stream_flags_t(PA_STREAM_ADJUST_LATENCY | PA_STREAM_START_MUTED)) != 0)
         return -5; //not success
     while (true)
     {
