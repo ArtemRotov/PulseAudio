@@ -71,4 +71,3 @@ DISTFILES +=
 
 #QMAKE_CFLAGS += -fpermissive
 #QMAKE_CXXFLAGS += -fpermissive
-#
