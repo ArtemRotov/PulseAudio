@@ -1,7 +1,6 @@
 #pragma once
 #include <pulse/def.h>
 
-
 class pa_threaded_mainloop;
 class pa_mainloop_api;
 class pa_context;
