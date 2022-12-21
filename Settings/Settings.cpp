@@ -34,7 +34,7 @@ void Settings::initDefaults()
 {
     setDefaultValue(pulseApplicationName, "RadioSim");
 
-    setDefaultValue(sampleFormat, 0);
+    setDefaultValue(sampleFormat, 3);
     setDefaultValue(sampleRate, 48000);
     setDefaultValue(sampleChannels, 2);
 

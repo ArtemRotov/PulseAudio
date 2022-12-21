@@ -14,7 +14,7 @@ PlaybackStream::PlaybackStream(ContextPtr ctx, SampleSpecification* sample,
 {
     MainLoopLocker lock(PulseAudioHandler::instance().mainLoop());
 
-    pa_stream_set_write_callback(stream(), nullptr, NullData);
+    pa_stream_set_write_callback(stream(), PlaybackStream::write, NullData);
 
     if (pa_stream_connect_playback(stream(), BasicDevice, bufferAttributes()->get(),
                                    PlaybStreamFlags, nullptr, nullptr) != 0)
@@ -48,3 +48,7 @@ void PlaybackStream::pause()
     pa_stream_cork(stream(), 1, 0, PulseAudioHandler::instance().mainLoop());
 }
 
+void PlaybackStream::write(StreamPtr stream, size_t nbytes, void* buffer)
+{
+
+}

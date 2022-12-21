@@ -77,21 +77,6 @@ void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 {
 //    if (requested_bytes > 1500)
 //        pa_stream_flush(stream,nullptr,nullptr);
-
-    static int as = 0;
-    as ++;
-    qDebug() << as;
-    if (as == 800)
-    {
-        map->map[0] = PA_CHANNEL_POSITION_FRONT_RIGHT;   //PA_CHANNEL_POSITION_FRONT_LEFT
-        map->map[1] = PA_CHANNEL_POSITION_FRONT_RIGHT;    //PA_CHANNEL_POSITION_FRONT_RIGHT
-    }
-    else if ( as == 1500)
-    {
-        map->map[0] = PA_CHANNEL_POSITION_FRONT_LEFT;   //PA_CHANNEL_POSITION_FRONT_LEFT
-        map->map[1] = PA_CHANNEL_POSITION_FRONT_LEFT;    //PA_CHANNEL_POSITION_FRONT_RIG
-    }
-
     std::unique_lock<std::mutex> lock(mutexMainBuff);
 
     if (queueBuff.empty())
@@ -119,7 +104,6 @@ void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
     pa_stream_write(stream, buffer, bytesToFill, nullptr, 0, PA_SEEK_RELATIVE);
 
 
-//----------------- Неработающий вариант -------------------------
 //    std::unique_lock<std::mutex> lock(mutexMainBuff);
 
 //    if (lenMainBuff == 0)
@@ -141,7 +125,7 @@ void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 //    pa_stream_write(stream, buffer, bytesToFill, nullptr, 0, PA_SEEK_RELATIVE);
 
 
-//------ Работающий вариант с приемом прямо внутри --------------------
+
 //    size_t bytes_remaining = requested_bytes;
 
 //    while (bytes_remaining > 0)
@@ -166,6 +150,7 @@ void on_o_complete(pa_stream *stream, size_t requested_bytes, void *udata)
 
 void on_i_complete(pa_stream *stream, size_t nbytes, void *udata)
 {
+    auto as = *((std::string*)udata);
     while (true)
     {
         const void* data;
@@ -230,7 +215,7 @@ int main(int argc, char *argv[])
     pa_threaded_mainloop_wait(mloop); //wait connect
 
 
-//-----------Устройства------------------
+//Dev
     pa_operation *operationSink;
     pa_operation *operationSource;
     void* udataSink = nullptr;
@@ -255,20 +240,25 @@ int main(int argc, char *argv[])
         pa_threaded_mainloop_wait(mloop);
     }
     pa_operation_unref(operationSource);
-//-----------Устройства------------------
+//dev
 
 
 
-    // [1] Настройка каналов
+    // [1] Channels
     pa_sample_spec spec;
-    spec.format = PA_SAMPLE_U8;
+    spec.format = PA_SAMPLE_S16LE;
     spec.rate = RATE;
     spec.channels = 2;
-    //pa_channel_map map;     //Тут смотреть левый правый похоже
+    //pa_channel_map map;
     map = new pa_channel_map;
-    pa_channel_map_init_stereo(map);
-    map->map[0] = PA_CHANNEL_POSITION_FRONT_LEFT;   //PA_CHANNEL_POSITION_FRONT_LEFT
-    map->map[1] = PA_CHANNEL_POSITION_FRONT_LEFT;    //PA_CHANNEL_POSITION_FRONT_RIGHT
+    map->map[0] = PA_CHANNEL_POSITION_LEFT;   //PA_CHANNEL_POSITION_FRONT_LEFT
+    map->map[1] = PA_CHANNEL_POSITION_RIGHT;    //PA_CHANNEL_POSITION_FRONT_RIGHT
+    map = pa_channel_map_init_stereo(map);
+
+
+
+    pa_cvolume* vol = new pa_cvolume;
+    //pa_cvolume_init(vol);
 
     pa_buffer_attr attr;
     attr.maxlength = (uint32_t) -1;
@@ -299,7 +289,8 @@ int main(int argc, char *argv[])
     // [1]
 
     pa_stream *stream = pa_stream_new(ctx, "MyAudioProjectRead", &spec, map);
-    void* dataRead = nullptr;
+    std::string str = "data";
+    void* dataRead = (void*)&str;
     pa_stream_set_state_callback(stream, stream_state_cb, mloop);
     pa_stream_set_read_callback(stream, on_i_complete, dataRead);
     if (pa_stream_connect_record(stream, device_id, &attr, pa_stream_flags_t(PA_STREAM_ADJUST_LATENCY | PA_STREAM_START_MUTED)) != 0)
@@ -358,30 +349,6 @@ int main(int argc, char *argv[])
     pa_stream_disconnect(stream);
     pa_stream_unref(stream);
 
-//    pa_stream *streamOut = pa_stream_new(ctx, "MyAudioProjectOut", &spec, &map);
-//    void* dataOut = nullptr;
-//    pa_stream_set_write_callback(streamOut, on_o_complete, mloop);
-//    pa_stream_set_state_callback(streamOut, stream_state_cb, mloop);
-//    pa_stream_connect_playback(streamOut, device_id, &attr, stream_flags, nullptr, nullptr);
-
-//    while (true)
-//    {
-//        int r = pa_stream_get_state(streamOut);
-//        if (r == PA_STREAM_READY)
-//            break;
-//        else if (r == PA_STREAM_FAILED)
-//        {
-//            qDebug() << "PA_STREAM_FAILED";
-//            return 0;
-//        }
-//        pa_threaded_mainloop_wait(mloop);
-//    }
-//    pa_stream_cork(streamOut, 0, 0, mloop);
-//    pa_threaded_mainloop_unlock(mloop); //
-
-
-
-
     pa_stream_cork(streamOut, 1, 0, mloop);
 
     pa_stream_disconnect(streamOut);
@@ -390,10 +357,6 @@ int main(int argc, char *argv[])
     pa_context_disconnect(ctx);
     pa_context_unref(ctx);
 
-//    pa_context_disconnect(ctxRead);
-//    pa_context_unref(ctxRead);
-//    pa_context_disconnect(ctxWrite);
-//    pa_context_unref(ctxWrite);
     pa_threaded_mainloop_stop(mloop); //
     pa_threaded_mainloop_free(mloop); //
 

@@ -11,6 +11,8 @@ namespace pulse
                                  BufferAttributes* buffAttr, ChannelMapPtr map);
         ~PlaybackStream();
 
+        static void write(StreamPtr stream, size_t nbytes, void* buffer);
+
         void resume() override;
         void pause() override;
 

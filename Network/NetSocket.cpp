@@ -6,11 +6,13 @@
 #include <mutex>
 #include <queue>
 
-
+#include <pulse/pulseaudio.h>
 extern uint8_t* mainBuff;
 extern std::mutex mutexMainBuff;
 extern uint32_t lenMainBuff;
 extern std::queue<uint8_t> queueBuff;
+extern pa_threaded_mainloop *mloop;
+extern pa_channel_map* map;
 
 NetSocket::NetSocket(const QString &addr, int port)
     : m_sock(new QUdpSocket(this))
@@ -47,6 +49,14 @@ qint64 NetSocket::read(char *data, qint64 maxlen)
 
 void NetSocket::readyRead()
 {
+    static int i =0;
+    ++i;
+    if ( i == 1000)
+    {
+
+        qDebug() << "map changed";
+    }
+
     QByteArray buffer;
     buffer.resize(1024);
 

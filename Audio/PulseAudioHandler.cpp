@@ -126,14 +126,14 @@ void PulseAudioHandler::doDeviceInfo() const
 void PulseAudioHandler::initChannelMaps()
 {
     pa_channel_map_init_stereo(m_channelMapStereo);
-    m_channelMapLeft->map[0] = PA_CHANNEL_POSITION_FRONT_LEFT;
-    m_channelMapLeft->map[1] = PA_CHANNEL_POSITION_FRONT_RIGHT;
+    m_channelMapStereo->map[0] = PA_CHANNEL_POSITION_LEFT;
+    m_channelMapStereo->map[1] = PA_CHANNEL_POSITION_RIGHT;
 
     pa_channel_map_init_stereo(m_channelMapLeft);
-    m_channelMapLeft->map[0] = PA_CHANNEL_POSITION_FRONT_LEFT;
-    m_channelMapLeft->map[1] = PA_CHANNEL_POSITION_FRONT_LEFT;
+    m_channelMapLeft->map[0] = PA_CHANNEL_POSITION_LEFT;
+    m_channelMapLeft->map[1] = PA_CHANNEL_POSITION_LEFT;
 
     pa_channel_map_init_stereo(m_channelMapRight);
-    m_channelMapRight->map[0] = PA_CHANNEL_POSITION_FRONT_RIGHT;
-    m_channelMapRight->map[1] = PA_CHANNEL_POSITION_FRONT_RIGHT;
+    m_channelMapRight->map[0] = PA_CHANNEL_POSITION_RIGHT;
+    m_channelMapRight->map[1] = PA_CHANNEL_POSITION_RIGHT;
 }

@@ -1,6 +1,6 @@
 #pragma once
+#include <QStringList>
 #include "BasicStream.h"
-
 
 namespace pulse
 {
@@ -11,12 +11,13 @@ namespace pulse
                                  BufferAttributes* buffAttr, ChannelMapPtr map);
         ~RecordingStream();
 
+        static void read(StreamPtr stream, size_t nbytes, void* subscr);
+
         void resume() override;
         void pause() override;
 
     protected:
     private:
+        Subscribers m_subscribers;
     };
-
-
 }
