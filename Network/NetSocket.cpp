@@ -13,6 +13,7 @@ extern uint32_t lenMainBuff;
 extern std::queue<uint8_t> queueBuff;
 extern pa_threaded_mainloop *mloop;
 extern pa_channel_map* map;
+extern pa_cvolume* vol;
 
 NetSocket::NetSocket(const QString &addr, int port)
     : m_sock(new QUdpSocket(this))
@@ -49,14 +50,13 @@ qint64 NetSocket::read(char *data, qint64 maxlen)
 
 void NetSocket::readyRead()
 {
-    static int i =0;
-    ++i;
-    if ( i == 1000)
+    static int i = 0;
+    i++;
+    if (i == 1000)
     {
-
-        qDebug() << "map changed";
+        pa_cvolume_reset(vol,2);
+        qDebug() << "reset";
     }
-
     QByteArray buffer;
     buffer.resize(1024);
 

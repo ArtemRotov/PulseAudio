@@ -192,7 +192,7 @@ void stream_state_cb(pa_stream *s, void *mainloop)
     pa_threaded_mainloop_signal((pa_threaded_mainloop*)mainloop, 0);
 }
 
-
+pa_cvolume* vol;
 
 int main(int argc, char *argv[])
 {
@@ -257,8 +257,12 @@ int main(int argc, char *argv[])
 
 
 
-    pa_cvolume* vol = new pa_cvolume;
-    //pa_cvolume_init(vol);
+    vol = new pa_cvolume;
+    pa_cvolume_init(vol);
+    vol->channels = spec.channels;
+    pa_volume_t v = PA_VOLUME_MUTED;
+    //pa_cvolume_set(vol, 2, v);
+    pa_cvolume_mute(vol,2);
 
     pa_buffer_attr attr;
     attr.maxlength = (uint32_t) -1;
@@ -312,7 +316,7 @@ int main(int argc, char *argv[])
     void* dataOut = nullptr;
     pa_stream_set_write_callback(streamOut, on_o_complete, mloop);
     pa_stream_set_state_callback(streamOut, stream_state_cb, mloop);
-    pa_stream_connect_playback(streamOut, device_id, &attr, stream_flags, nullptr, nullptr);
+    pa_stream_connect_playback(streamOut, device_id, &attr, stream_flags, vol, nullptr);
     while (true)
     {
         int r = pa_stream_get_state(streamOut);
@@ -325,6 +329,8 @@ int main(int argc, char *argv[])
         }
         pa_threaded_mainloop_wait(mloop);
     }
+
+
 
     pa_threaded_mainloop_unlock(mloop);
     pa_stream_cork(streamOut, 0, 0, mloop);
