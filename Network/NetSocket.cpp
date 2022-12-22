@@ -56,33 +56,17 @@ void NetSocket::readyRead()
 {
 #if 1
 
-    static int d = 0;
-    static bool cork = false;
-    d++;
-    if (d%2000 == 0)
-    {
-        pa_stream_cork(stream,cork,0,nullptr);
-        cork = !cork;
-        qDebug() << cork;
-    }
-
-
     QByteArray buffer;
     buffer.resize(1024);
 
     size_t len  = m_sock->readDatagram(buffer.data(), buffer.size());
-    //qDebug() << "Readed " << len << " bytes (and removed old)";
     if (len < 0)
         return;
 
     size_t requested_bytes = pa_stream_writable_size(streamOut);
-    //qDebug() << "+ " << len << " bytes  --  can write now : " << requested_bytes;
-
     if (len > requested_bytes)  len = requested_bytes;
-
     uint8_t* b;
     pa_stream_begin_write(streamOut, (void**) &b, &len);
-
     for (int i = 0; i < len; ++i)
     {
         b[i] = (buffer.data())[i];
