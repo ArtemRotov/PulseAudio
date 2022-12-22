@@ -73,13 +73,6 @@ void NetSocket::readyRead()
     }
 
     pa_stream_write(streamOut, b, len, nullptr, 0, PA_SEEK_RELATIVE);
-    //qDebug() << "writed " << len;
-
-
-
-//    qDebug() << "Before flush: " << pa_stream_writable_size(streamOut);
-//    pa_stream_flush(streamOut,nullptr,nullptr);
-//    qDebug() << "After flush: " << pa_stream_writable_size(streamOut);
 #endif
 #if 0
         QByteArray buffer;
