@@ -14,6 +14,10 @@ extern std::queue<uint8_t> queueBuff;
 extern pa_threaded_mainloop *mloop;
 extern pa_channel_map* map;
 extern pa_cvolume* vol;
+extern pa_context *ctx;
+extern pa_stream *stream;
+extern pa_stream *streamOut;
+
 
 NetSocket::NetSocket(const QString &addr, int port)
     : m_sock(new QUdpSocket(this))
@@ -50,26 +54,65 @@ qint64 NetSocket::read(char *data, qint64 maxlen)
 
 void NetSocket::readyRead()
 {
-    static int i = 0;
-    i++;
-    if (i == 1000)
+#if 1
+
+    static int d = 0;
+    static bool cork = false;
+    d++;
+    if (d%2000 == 0)
     {
-        pa_cvolume_reset(vol,2);
-        qDebug() << "reset";
+        pa_stream_cork(stream,cork,0,nullptr);
+        cork = !cork;
+        qDebug() << cork;
     }
+
+
     QByteArray buffer;
     buffer.resize(1024);
 
-    int len  = m_sock->readDatagram(buffer.data(), buffer.size());
+    size_t len  = m_sock->readDatagram(buffer.data(), buffer.size());
     //qDebug() << "Readed " << len << " bytes (and removed old)";
     if (len < 0)
         return;
 
-    std::lock_guard<std::mutex> lock(mutexMainBuff);
+    size_t requested_bytes = pa_stream_writable_size(streamOut);
+    //qDebug() << "+ " << len << " bytes  --  can write now : " << requested_bytes;
+
+    if (len > requested_bytes)  len = requested_bytes;
+
+    uint8_t* b;
+    pa_stream_begin_write(streamOut, (void**) &b, &len);
+
     for (int i = 0; i < len; ++i)
     {
-        queueBuff.push((buffer.data())[i]);
+        b[i] = (buffer.data())[i];
     }
+
+    pa_stream_write(streamOut, b, len, nullptr, 0, PA_SEEK_RELATIVE);
+    //qDebug() << "writed " << len;
+
+
+
+//    qDebug() << "Before flush: " << pa_stream_writable_size(streamOut);
+//    pa_stream_flush(streamOut,nullptr,nullptr);
+//    qDebug() << "After flush: " << pa_stream_writable_size(streamOut);
+#endif
+#if 0
+        QByteArray buffer;
+        buffer.resize(1024);
+
+        int len  = m_sock->readDatagram(buffer.data(), buffer.size());
+        //qDebug() << "Readed " << len << " bytes (and removed old)";
+        if (len < 0)
+            return;
+
+        std::lock_guard<std::mutex> lock(mutexMainBuff);
+        for (int i = 0; i < len; ++i)
+        {
+            queueBuff.push((buffer.data())[i]);
+        }
+#endif
+
 }
 
 void NetSocket::error(QAbstractSocket::SocketError err )

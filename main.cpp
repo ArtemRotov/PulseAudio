@@ -193,6 +193,10 @@ void stream_state_cb(pa_stream *s, void *mainloop)
 }
 
 pa_cvolume* vol;
+pa_context *ctx;
+pa_stream *stream;
+pa_stream *streamOut;
+
 
 int main(int argc, char *argv[])
 {
@@ -200,7 +204,7 @@ int main(int argc, char *argv[])
     QApplication::setOrganizationName( "Vniira" );
     QApplication::setApplicationName( "RadioSim" );
 
-    pulse::PulseAudioHandler::instance();
+    //pulse::PulseAudioHandler::instance();
 
     sock = new NetSocket(addr,1234);
     mloop = pa_threaded_mainloop_new();
@@ -208,7 +212,7 @@ int main(int argc, char *argv[])
     pa_threaded_mainloop_lock(mloop);
     pa_threaded_mainloop_start(mloop);
     pa_mainloop_api *apiRead = pa_threaded_mainloop_get_api(mloop);
-    pa_context *ctx = pa_context_new_with_proplist(apiRead, "123", nullptr);
+    ctx = pa_context_new_with_proplist(apiRead, "123", nullptr);
     void *udataRead = nullptr;
     pa_context_set_state_callback(ctx, on_state_change1, nullptr);
     pa_context_connect(ctx, nullptr, PA_CONTEXT_NOAUTOSPAWN, nullptr);
@@ -251,18 +255,20 @@ int main(int argc, char *argv[])
     spec.channels = 2;
     //pa_channel_map map;
     map = new pa_channel_map;
-    map->map[0] = PA_CHANNEL_POSITION_LEFT;   //PA_CHANNEL_POSITION_FRONT_LEFT
-    map->map[1] = PA_CHANNEL_POSITION_RIGHT;    //PA_CHANNEL_POSITION_FRONT_RIGHT
     map = pa_channel_map_init_stereo(map);
 
+    //map->map[0] = PA_CHANNEL_POSITION_RIGHT;   //PA_CHANNEL_POSITION_FRONT_LEFT
+    //map->map[1] = PA_CHANNEL_POSITION_LEFT;    //PA_CHANNEL_POSITION_FRONT_RIGHT
 
 
-    vol = new pa_cvolume;
-    pa_cvolume_init(vol);
-    vol->channels = spec.channels;
-    pa_volume_t v = PA_VOLUME_MUTED;
-    //pa_cvolume_set(vol, 2, v);
-    pa_cvolume_mute(vol,2);
+//    vol = new pa_cvolume;
+//    pa_cvolume_init(vol);
+//    vol->channels = spec.channels;
+//    pa_volume_t v = PA_VOLUME_MUTED;
+//    //pa_cvolume_set(vol, 2, v);
+//    pa_cvolume_mute(vol,1);
+//    pa_cvolume_reset(vol,2);
+//    //pa_cvolume_reset(vol,3);
 
     pa_buffer_attr attr;
     attr.maxlength = (uint32_t) -1;
@@ -292,12 +298,13 @@ int main(int argc, char *argv[])
     const char *device_id = nullptr;
     // [1]
 
-    pa_stream *stream = pa_stream_new(ctx, "MyAudioProjectRead", &spec, map);
+
+    stream = pa_stream_new(ctx, "MyAudioProjectRead", &spec, map);
     std::string str = "data";
     void* dataRead = (void*)&str;
     pa_stream_set_state_callback(stream, stream_state_cb, mloop);
     pa_stream_set_read_callback(stream, on_i_complete, dataRead);
-    if (pa_stream_connect_record(stream, device_id, &attr, pa_stream_flags_t(PA_STREAM_ADJUST_LATENCY | PA_STREAM_START_MUTED)) != 0)
+    if (pa_stream_connect_record(stream, device_id, &attr, pa_stream_flags_t(PA_STREAM_ADJUST_LATENCY /*| PA_STREAM_START_MUTED*/)) != 0)
         return -5; //not success
     while (true)
     {
@@ -312,9 +319,10 @@ int main(int argc, char *argv[])
         pa_threaded_mainloop_wait(mloop);
     }
 
-    pa_stream *streamOut = pa_stream_new(ctx, "MyAudioProjectOut", &spec, map);
+    streamOut = pa_stream_new(ctx, "MyAudioProjectOut", &spec, map);
     void* dataOut = nullptr;
-    pa_stream_set_write_callback(streamOut, on_o_complete, mloop);
+    //pa_stream_set_write_callback(streamOut, on_o_complete, mloop);
+    pa_stream_set_write_callback(streamOut, nullptr, mloop);
     pa_stream_set_state_callback(streamOut, stream_state_cb, mloop);
     pa_stream_connect_playback(streamOut, device_id, &attr, stream_flags, vol, nullptr);
     while (true)
@@ -333,7 +341,9 @@ int main(int argc, char *argv[])
 
 
     pa_threaded_mainloop_unlock(mloop);
+    pa_stream_cork(stream, 0, 0, mloop);
     pa_stream_cork(streamOut, 0, 0, mloop);
+
 
     qDebug() << "START WORKING";
 
