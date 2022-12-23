@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc,argv);
     QApplication::setOrganizationName( "Vniira" );
     QApplication::setApplicationName( "RadioSim" );
-
+    pulse::Settings::instance();
     //pulse::PulseAudioHandler::instance();
 
     sock = new NetSocket(addr,1234);
@@ -322,7 +322,7 @@ int main(int argc, char *argv[])
     streamOut = pa_stream_new(ctx, "MyAudioProjectOut", &spec, map);
     void* dataOut = nullptr;
     //pa_stream_set_write_callback(streamOut, on_o_complete, mloop);
-    pa_stream_set_write_callback(streamOut, nullptr, mloop);
+    //pa_stream_set_write_callback(streamOut, nullptr, mloop);
     pa_stream_set_state_callback(streamOut, stream_state_cb, mloop);
     pa_stream_connect_playback(streamOut, device_id, &attr, stream_flags, vol, nullptr);
     while (true)

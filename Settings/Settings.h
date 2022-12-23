@@ -20,6 +20,8 @@ namespace pulse
         static QVariant value(const QString &key, const QVariant &def = QVariant());
 
         static const QString pulseApplicationName;
+        static const QString usePlaybackAsyncAccessModel;
+        static const QString useRecordAsyncAccessModel;
 
         static const QString sampleFormat;
         static const QString sampleRate;

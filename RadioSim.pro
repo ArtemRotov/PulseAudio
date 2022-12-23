@@ -30,9 +30,7 @@ DESTDIR   = $${MY_BIN_DIR}$${MY_CONFIG}$${MY_TOOLSET}$${MY_PLATFORM}
 INCLUDEPATH += $${UI_DIR}
 INCLUDEPATH += $${MOC_DIR}
 
-
 LIBS += -lpulse
-#LIBS += -lpulse-simple
 
 HEADERS +=                              \
     $$PWD/Network/NetSocket.h           \

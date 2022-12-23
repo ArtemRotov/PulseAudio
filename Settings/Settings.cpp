@@ -5,6 +5,8 @@ using namespace pulse;
 
 
 const QString Settings::pulseApplicationName = "pulseApplicationName";
+const QString Settings::usePlaybackAsyncAccessModel = "usePlaybackAsyncAccessModel";
+const QString Settings::useRecordAsyncAccessModel = "useRecordAsyncAccessModel";
 
 const QString Settings::sampleFormat = "sample/format";
 const QString Settings::sampleRate = "sample/rate";
@@ -33,6 +35,8 @@ Settings &Settings::instance()
 void Settings::initDefaults()
 {
     setDefaultValue(pulseApplicationName, "RadioSim");
+    setDefaultValue(usePlaybackAsyncAccessModel, false);
+    setDefaultValue(useRecordAsyncAccessModel, false);
 
     setDefaultValue(sampleFormat, 3);
     setDefaultValue(sampleRate, 48000);
