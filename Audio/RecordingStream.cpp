@@ -3,19 +3,23 @@
 #include "BufferAttributes.h"
 #include "PulseAudioHandler.h"
 #include "MainLoopLocker.h"
+#include "Settings/Settings.h"
 #include <QDebug>
 
 using namespace pulse;
 
 
 RecordingStream::RecordingStream(ContextPtr ctx, SampleSpecification* sample,
-                BufferAttributes* buffAttr, ChannelMapPtr map)
-    : BasicStream(ctx,sample,buffAttr,map)
+                BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock)
+    : BasicStream(ctx, sample, buffAttr, map, sock)
     , m_subscribers()
 {
     MainLoopLocker lock(PulseAudioHandler::instance().mainLoop());
 
-    pa_stream_set_read_callback(stream(), RecordingStream::read, static_cast<void*>(&m_subscribers));
+    if (Settings::instance().value(Settings::useRecordAsyncAccessModel).toBool())
+        pa_stream_set_read_callback(stream(), RecordingStream::read, static_cast<void*>(&m_subscribers));
+    else
+        pa_stream_set_read_callback(stream(), nullptr, NullData);
 
     if (pa_stream_connect_record(stream(), BasicDevice, bufferAttributes()->get(), RecStreamFlags) != 0)
         qDebug() << "Recording Stream is not connected";

@@ -2,13 +2,15 @@
 #include <QStringList>
 #include "BasicStream.h"
 
+class NetSocket;
+
 namespace pulse
 {
     class RecordingStream : public BasicStream
     {
     public:
         explicit RecordingStream(ContextPtr ctx, SampleSpecification* sample,
-                                 BufferAttributes* buffAttr, ChannelMapPtr map);
+                                 BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock);
         ~RecordingStream();
 
         static void read(StreamPtr stream, size_t nbytes, void* subscr);

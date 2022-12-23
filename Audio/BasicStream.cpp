@@ -10,8 +10,9 @@ using namespace pulse;
 
 
 BasicStream::BasicStream(ContextPtr ctx, SampleSpecification* sample,
-                BufferAttributes* buffAttr, ChannelMapPtr map)
+                BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock)
     : IStream()
+    , m_sock(sock)
     , m_context(ctx)
     , m_sampleSpec(sample)
     , m_bufferAttr(buffAttr)
@@ -42,4 +43,15 @@ StreamPtr BasicStream::stream() const
 BufferAttributes* BasicStream::bufferAttributes() const
 {
     return m_bufferAttr;
+}
+
+
+NetSocket* BasicStream::socket() const
+{
+    return m_sock;
+}
+
+void BasicStream::setSocket(NetSocket* sock)
+{
+    m_sock = sock;
 }
