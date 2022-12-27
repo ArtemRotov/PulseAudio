@@ -1,7 +1,7 @@
 #pragma once
 #include <pulse/def.h>   
 #include <QVector>
-#include <QString>
+#include <QString>  
 
 class pa_threaded_mainloop;
 class pa_mainloop_api;
