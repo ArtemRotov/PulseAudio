@@ -203,178 +203,199 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc,argv);
     QApplication::setOrganizationName( "Vniira" );
     QApplication::setApplicationName( "RadioSim" );
-    pulse::Settings::instance();
-    //pulse::PulseAudioHandler::instance();
 
-    sock = new NetSocket(addr,1234);
-    mloop = pa_threaded_mainloop_new();
+    pulse::PulseAudioHandler::instance();
 
-    pa_threaded_mainloop_lock(mloop);
-    pa_threaded_mainloop_start(mloop);
-    pa_mainloop_api *apiRead = pa_threaded_mainloop_get_api(mloop);
-    ctx = pa_context_new_with_proplist(apiRead, "123", nullptr);
-    void *udataRead = nullptr;
-    pa_context_set_state_callback(ctx, on_state_change1, nullptr);
-    pa_context_connect(ctx, nullptr, PA_CONTEXT_NOAUTOSPAWN, nullptr);
-    pa_threaded_mainloop_wait(mloop); //wait connect
+    // На прием
+    NetSocket sockIn("192.9.206.60", 11111);
 
-
-//Dev
-    pa_operation *operationSink;
-    pa_operation *operationSource;
-    void* udataSink = nullptr;
-    void* udataSource = nullptr;
-
-    operationSink = pa_context_get_sink_info_list(ctx, on_dev_sink, nullptr);
-    while (true)
-    {
-        int result = pa_operation_get_state(operationSink);
-        if (result == PA_OPERATION_DONE || result == PA_OPERATION_CANCELLED)
-            break;
-        pa_threaded_mainloop_wait(mloop);
-    }
-    pa_operation_unref(operationSink);
-
-    operationSource = pa_context_get_source_info_list(ctx, on_dev_source, nullptr);
-    while (true)
-    {
-        int result = pa_operation_get_state(operationSource);
-        if (result == PA_OPERATION_DONE || result == PA_OPERATION_CANCELLED)
-            break;
-        pa_threaded_mainloop_wait(mloop);
-    }
-    pa_operation_unref(operationSource);
-//dev
+    // На отправку
+    NetSocket sockSend("192.9.206.60", 11112);
 
 
 
-    // [1] Channels
-    pa_sample_spec spec;
-    spec.format = PA_SAMPLE_S16LE;
-    spec.rate = RATE;
-    spec.channels = 2;
-    //pa_channel_map map;
-    map = new pa_channel_map;
-    map = pa_channel_map_init_stereo(map);
-
-    //map->map[0] = PA_CHANNEL_POSITION_RIGHT;   //PA_CHANNEL_POSITION_FRONT_LEFT
-    //map->map[1] = PA_CHANNEL_POSITION_LEFT;    //PA_CHANNEL_POSITION_FRONT_RIGHT
 
 
-//    vol = new pa_cvolume;
-//    pa_cvolume_init(vol);
-//    vol->channels = spec.channels;
-//    pa_volume_t v = PA_VOLUME_MUTED;
-//    //pa_cvolume_set(vol, 2, v);
-//    pa_cvolume_mute(vol,1);
-//    pa_cvolume_reset(vol,2);
-//    //pa_cvolume_reset(vol,3);
-
-    pa_buffer_attr attr;
-    attr.maxlength = (uint32_t) -1;
-    attr.tlength = 1024;
-    attr.prebuf = 0;
-    attr.minreq = 1024;
-    attr.fragsize = 1024;
-
-
-    pa_buffer_attr attrRead;
-    attrRead.maxlength = (uint32_t) -1;
-    attrRead.tlength = (uint32_t) -1;
-    attrRead.prebuf = (uint32_t) -1;
-    attrRead.minreq = (uint32_t) -1;
-    attrRead.fragsize = 1024;
-
-    pa_buffer_attr attrOut;
-    attrOut.maxlength = (uint32_t) -1;
-    attrOut.tlength = 1024;
-    attrOut.prebuf = 0;
-    attrOut.minreq = 1024;
-    attrOut.fragsize = (uint32_t) -1;
-
-    pa_stream_flags_t stream_flags = pa_stream_flags_t(PA_STREAM_START_CORKED | PA_STREAM_INTERPOLATE_TIMING |
-    PA_STREAM_NOT_MONOTONIC | PA_STREAM_AUTO_TIMING_UPDATE | PA_STREAM_ADJUST_LATENCY);
-
-    const char *device_id = nullptr;
-    // [1]
-
-
-    stream = pa_stream_new(ctx, "MyAudioProjectRead", &spec, map);
-    std::string str = "data";
-    void* dataRead = (void*)&str;
-    pa_stream_set_state_callback(stream, stream_state_cb, mloop);
-    pa_stream_set_read_callback(stream, on_i_complete, dataRead);
-    if (pa_stream_connect_record(stream, device_id, &attr, pa_stream_flags_t(PA_STREAM_ADJUST_LATENCY /*| PA_STREAM_START_MUTED*/)) != 0)
-        return -5; //not success
-    while (true)
-    {
-        int r = pa_stream_get_state(stream);
-        if (r == PA_STREAM_READY)
-            break;
-        else if (r == PA_STREAM_FAILED)
-        {
-            qDebug() << "PA_STREAM_FAILED";
-            return 0;
-        }
-        pa_threaded_mainloop_wait(mloop);
-    }
-
-    streamOut = pa_stream_new(ctx, "MyAudioProjectOut", &spec, map);
-    void* dataOut = nullptr;
-    //pa_stream_set_write_callback(streamOut, on_o_complete, mloop);
-    //pa_stream_set_write_callback(streamOut, nullptr, mloop);
-    pa_stream_set_state_callback(streamOut, stream_state_cb, mloop);
-    pa_stream_connect_playback(streamOut, device_id, &attr, stream_flags, vol, nullptr);
-    while (true)
-    {
-        int r = pa_stream_get_state(streamOut);
-        if (r == PA_STREAM_READY)
-            break;
-        else if (r == PA_STREAM_FAILED)
-        {
-            qDebug() << "PA_STREAM_FAILED";
-            return 0;
-        }
-        pa_threaded_mainloop_wait(mloop);
-    }
-
-
-
-    pa_threaded_mainloop_unlock(mloop);
-    pa_stream_cork(stream, 0, 0, mloop);
-    pa_stream_cork(streamOut, 0, 0, mloop);
-
-
-    qDebug() << "START WORKING";
-
-    app.exec();
-    while(true)
-    {
-        pa_stream_cork(stream, 1, 0, mloop);
-
-        QThread::sleep(3);
-
-        pa_stream_cork(stream, 0, 0, mloop);
-
-        QThread::sleep(3);
-
-    }
-    qDebug() << "STOP WORKING";
-   // pa_stream_cork(streamOut, 1, 0, mloop);
-    pa_threaded_mainloop_lock(mloop); //
-    pa_stream_disconnect(stream);
-    pa_stream_unref(stream);
-
-    pa_stream_cork(streamOut, 1, 0, mloop);
-
-    pa_stream_disconnect(streamOut);
-    pa_stream_unref(streamOut);
-
-    pa_context_disconnect(ctx);
-    pa_context_unref(ctx);
-
-    pa_threaded_mainloop_stop(mloop); //
-    pa_threaded_mainloop_free(mloop); //
-
-    return 0;
 }
+
+
+//int main(int argc, char *argv[])
+//{
+//    QCoreApplication app(argc,argv);
+//    QApplication::setOrganizationName( "Vniira" );
+//    QApplication::setApplicationName( "RadioSim" );
+//    pulse::Settings::instance();
+//    //pulse::PulseAudioHandler::instance();
+
+//    sock = new NetSocket(addr,1234);
+//    mloop = pa_threaded_mainloop_new();
+
+//    pa_threaded_mainloop_lock(mloop);
+//    pa_threaded_mainloop_start(mloop);
+//    pa_mainloop_api *apiRead = pa_threaded_mainloop_get_api(mloop);
+//    ctx = pa_context_new_with_proplist(apiRead, "123", nullptr);
+//    void *udataRead = nullptr;
+//    pa_context_set_state_callback(ctx, on_state_change1, nullptr);
+//    pa_context_connect(ctx, nullptr, PA_CONTEXT_NOAUTOSPAWN, nullptr);
+//    pa_threaded_mainloop_wait(mloop); //wait connect
+
+
+////Dev
+//    pa_operation *operationSink;
+//    pa_operation *operationSource;
+//    void* udataSink = nullptr;
+//    void* udataSource = nullptr;
+
+//    operationSink = pa_context_get_sink_info_list(ctx, on_dev_sink, nullptr);
+//    while (true)
+//    {
+//        int result = pa_operation_get_state(operationSink);
+//        if (result == PA_OPERATION_DONE || result == PA_OPERATION_CANCELLED)
+//            break;
+//        pa_threaded_mainloop_wait(mloop);
+//    }
+//    pa_operation_unref(operationSink);
+
+//    operationSource = pa_context_get_source_info_list(ctx, on_dev_source, nullptr);
+//    while (true)
+//    {
+//        int result = pa_operation_get_state(operationSource);
+//        if (result == PA_OPERATION_DONE || result == PA_OPERATION_CANCELLED)
+//            break;
+//        pa_threaded_mainloop_wait(mloop);
+//    }
+//    pa_operation_unref(operationSource);
+////dev
+
+
+
+//    // [1] Channels
+//    pa_sample_spec spec;
+//    spec.format = PA_SAMPLE_S16LE;
+//    spec.rate = RATE;
+//    spec.channels = 2;
+//    //pa_channel_map map;
+//    map = new pa_channel_map;
+//    map = pa_channel_map_init_stereo(map);
+
+//    //map->map[0] = PA_CHANNEL_POSITION_RIGHT;   //PA_CHANNEL_POSITION_FRONT_LEFT
+//    //map->map[1] = PA_CHANNEL_POSITION_LEFT;    //PA_CHANNEL_POSITION_FRONT_RIGHT
+
+
+////    vol = new pa_cvolume;
+////    pa_cvolume_init(vol);
+////    vol->channels = spec.channels;
+////    pa_volume_t v = PA_VOLUME_MUTED;
+////    //pa_cvolume_set(vol, 2, v);
+////    pa_cvolume_mute(vol,1);
+////    pa_cvolume_reset(vol,2);
+////    //pa_cvolume_reset(vol,3);
+
+//    pa_buffer_attr attr;
+//    attr.maxlength = (uint32_t) -1;
+//    attr.tlength = 1024;
+//    attr.prebuf = 0;
+//    attr.minreq = 1024;
+//    attr.fragsize = 1024;
+
+
+//    pa_buffer_attr attrRead;
+//    attrRead.maxlength = (uint32_t) -1;
+//    attrRead.tlength = (uint32_t) -1;
+//    attrRead.prebuf = (uint32_t) -1;
+//    attrRead.minreq = (uint32_t) -1;
+//    attrRead.fragsize = 1024;
+
+//    pa_buffer_attr attrOut;
+//    attrOut.maxlength = (uint32_t) -1;
+//    attrOut.tlength = 1024;
+//    attrOut.prebuf = 0;
+//    attrOut.minreq = 1024;
+//    attrOut.fragsize = (uint32_t) -1;
+
+//    pa_stream_flags_t stream_flags = pa_stream_flags_t(PA_STREAM_START_CORKED | PA_STREAM_INTERPOLATE_TIMING |
+//    PA_STREAM_NOT_MONOTONIC | PA_STREAM_AUTO_TIMING_UPDATE | PA_STREAM_ADJUST_LATENCY);
+
+//    const char *device_id = nullptr;
+//    // [1]
+
+
+//    stream = pa_stream_new(ctx, "MyAudioProjectRead", &spec, map);
+//    std::string str = "data";
+//    void* dataRead = (void*)&str;
+//    pa_stream_set_state_callback(stream, stream_state_cb, mloop);
+//    pa_stream_set_read_callback(stream, on_i_complete, dataRead);
+//    if (pa_stream_connect_record(stream, device_id, &attr, pa_stream_flags_t(PA_STREAM_ADJUST_LATENCY /*| PA_STREAM_START_MUTED*/)) != 0)
+//        return -5; //not success
+//    while (true)
+//    {
+//        int r = pa_stream_get_state(stream);
+//        if (r == PA_STREAM_READY)
+//            break;
+//        else if (r == PA_STREAM_FAILED)
+//        {
+//            qDebug() << "PA_STREAM_FAILED";
+//            return 0;
+//        }
+//        pa_threaded_mainloop_wait(mloop);
+//    }
+
+//    streamOut = pa_stream_new(ctx, "MyAudioProjectOut", &spec, map);
+//    void* dataOut = nullptr;
+//    //pa_stream_set_write_callback(streamOut, on_o_complete, mloop);
+//    //pa_stream_set_write_callback(streamOut, nullptr, mloop);
+//    pa_stream_set_state_callback(streamOut, stream_state_cb, mloop);
+//    pa_stream_connect_playback(streamOut, device_id, &attr, stream_flags, vol, nullptr);
+//    while (true)
+//    {
+//        int r = pa_stream_get_state(streamOut);
+//        if (r == PA_STREAM_READY)
+//            break;
+//        else if (r == PA_STREAM_FAILED)
+//        {
+//            qDebug() << "PA_STREAM_FAILED";
+//            return 0;
+//        }
+//        pa_threaded_mainloop_wait(mloop);
+//    }
+
+
+
+//    pa_threaded_mainloop_unlock(mloop);
+//    pa_stream_cork(stream, 0, 0, mloop);
+//    pa_stream_cork(streamOut, 0, 0, mloop);
+
+
+//    qDebug() << "START WORKING";
+
+//    app.exec();
+//    while(true)
+//    {
+//        pa_stream_cork(stream, 1, 0, mloop);
+
+//        QThread::sleep(3);
+
+//        pa_stream_cork(stream, 0, 0, mloop);
+
+//        QThread::sleep(3);
+
+//    }
+//    qDebug() << "STOP WORKING";
+//   // pa_stream_cork(streamOut, 1, 0, mloop);
+//    pa_threaded_mainloop_lock(mloop); //
+//    pa_stream_disconnect(stream);
+//    pa_stream_unref(stream);
+
+//    pa_stream_cork(streamOut, 1, 0, mloop);
+
+//    pa_stream_disconnect(streamOut);
+//    pa_stream_unref(streamOut);
+
+//    pa_context_disconnect(ctx);
+//    pa_context_unref(ctx);
+
+//    pa_threaded_mainloop_stop(mloop); //
+//    pa_threaded_mainloop_free(mloop); //
+
+//    return 0;
+//}

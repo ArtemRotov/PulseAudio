@@ -5,6 +5,7 @@
 #include "PulseAudioHandler.h"
 #include "SampleSpecification.h"
 #include "MainLoopLocker.h"
+#include "Network/NetSocket.h"
 
 using namespace pulse;
 

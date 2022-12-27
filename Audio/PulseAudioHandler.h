@@ -6,9 +6,15 @@
 
 #include "def.h"
 
+class NetSocket;
 
 namespace pulse
 {
+
+    class BasicStream;
+    class RecordingStream;
+    class PlaybackStream;
+
     class PulseAudioHandler
     {
         // Singleton notation
@@ -27,13 +33,16 @@ namespace pulse
 
         MainLoopPtr mainLoop() const;
 
+        RecordingStream* createRecordingStream(StreamMapType type, NetSocket* socket);
+        PlaybackStream* createPlaybackStream(StreamMapType type, NetSocket* socket);
+
     protected:
     private:
         void init();
         void doDeviceInfo() const;
         void initChannelMaps();
 
-        static MainLoopPtr      m_mainLoop;
+        MainLoopPtr             m_mainLoop;
 
         MainLoopApiPtr          m_mainLoopApi;
         ContextPtr              m_context;
@@ -43,6 +52,8 @@ namespace pulse
         ChannelMapPtr           m_channelMapRight;
         SampleSpecification*    m_sampleSpec;
         BufferAttributes*       m_bufferAttr;
+
+        QVector<BasicStream*>    m_streams;
 
     };
 
@@ -55,7 +66,7 @@ namespace pulse
 
         if (eol != 0)
         {
-            pa_threaded_mainloop_signal(m_mainLoop, 0);
+            pa_threaded_mainloop_signal(instance().mainLoop(), 0);
             return;
         }
 

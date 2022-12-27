@@ -2,6 +2,7 @@
 #include <pulse/def.h>   
 #include <QVector>
 #include <QString>  
+#include <QDebug>
 
 class pa_threaded_mainloop;
 class pa_mainloop_api;
@@ -17,6 +18,7 @@ namespace pulse
     class SampleSpecification;
     class BufferAttributes;
 
+
     typedef     pa_threaded_mainloop*   MainLoopPtr;
     typedef     pa_mainloop_api*        MainLoopApiPtr;
     typedef     pa_context*             ContextPtr;
@@ -27,7 +29,27 @@ namespace pulse
     typedef     pa_channel_map*         ChannelMapPtr;
     typedef     pa_stream*              StreamPtr;
 
-    using Subscribers = QVector<QString>;
+
+    enum class StreamMapType
+    {
+        StereoChannel,
+        LeftChannel,
+        RightChannel
+    };
+
+
+    struct Subscriber
+    {
+        Subscriber() = default;
+        Subscriber(const QString &a, int p) : address(a), port(p) {}
+        ~Subscriber() = default;
+
+        QString address;
+        int     port;
+    };
+
+    using Subscribers = QVector<Subscriber>;
+
 
     const char* const BasicDevice = nullptr;
     void* const NullData = nullptr;

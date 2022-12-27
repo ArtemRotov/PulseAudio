@@ -54,7 +54,7 @@ int NetSocket::receive(char *data, int maxlen)
 void NetSocket::setReceiveMethod(const ReceiveMethod &method)
 {
     m_recv = method;
-    connect(m_sock, &QUdpSocket::readyRead, this, method);
+    connect(m_sock, &QUdpSocket::readyRead, this, m_recv);
 }
 
 void NetSocket::readyRead()

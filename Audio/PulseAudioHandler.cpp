@@ -4,21 +4,23 @@
 #include "Settings/Settings.h"
 #include "SampleSpecification.h"
 #include "BufferAttributes.h"
+#include "Audio/RecordingStream.h"
+#include "Audio/PlaybackStream.h"
 
 
 using namespace pulse;
 
-MainLoopPtr PulseAudioHandler::m_mainLoop = nullptr;
-
 
 PulseAudioHandler::PulseAudioHandler()
-    : m_mainLoopApi(nullptr)
+    : m_mainLoop(nullptr)
+    , m_mainLoopApi(nullptr)
     , m_context(nullptr)
     , m_channelMapStereo(new ChannelMap)
     , m_channelMapLeft(new ChannelMap)
     , m_channelMapRight(new ChannelMap)
     , m_sampleSpec(new SampleSpecification)
     , m_bufferAttr(new BufferAttributes)
+    , m_streams()
 {
     init();
 }
@@ -38,10 +40,17 @@ PulseAudioHandler::~PulseAudioHandler()
     delete m_channelMapRight;
     delete m_sampleSpec;
     delete m_bufferAttr;
+
+    for (BasicStream* el : m_streams)
+    {
+        delete el;
+    }
 }
 
 void PulseAudioHandler::init()
 {
+    pulse::Settings::instance();
+
     m_mainLoop = pa_threaded_mainloop_new();
 
     MainLoopLocker lock(m_mainLoop);
@@ -64,7 +73,63 @@ void PulseAudioHandler::init()
 
 MainLoopPtr PulseAudioHandler::mainLoop() const
 {
-    return m_mainLoop;
+    return instance().m_mainLoop;
+}
+
+RecordingStream* PulseAudioHandler::createRecordingStream(StreamMapType type, NetSocket* socket)
+{
+    RecordingStream* stream = nullptr;
+    switch (type)
+    {
+    case StreamMapType::StereoChannel:
+        stream = new RecordingStream(m_context, m_sampleSpec, m_bufferAttr, m_channelMapStereo, socket);
+        break;
+
+    case StreamMapType::LeftChannel:
+        stream = new RecordingStream(m_context, m_sampleSpec, m_bufferAttr, m_channelMapLeft, socket);
+        break;
+
+    case StreamMapType::RightChannel:
+        stream = new RecordingStream(m_context, m_sampleSpec, m_bufferAttr, m_channelMapRight, socket);
+        break;
+
+    default:
+        break;
+
+    }
+
+    if (stream)
+        m_streams.push_back(stream);
+
+    return stream;
+}
+
+PlaybackStream* PulseAudioHandler::createPlaybackStream(StreamMapType type, NetSocket* socket)
+{
+    PlaybackStream* stream = nullptr;
+    switch (type)
+    {
+    case StreamMapType::StereoChannel:
+        stream = new PlaybackStream(m_context, m_sampleSpec, m_bufferAttr, m_channelMapStereo, socket);
+        break;
+
+    case StreamMapType::LeftChannel:
+        stream = new PlaybackStream(m_context, m_sampleSpec, m_bufferAttr, m_channelMapLeft, socket);
+        break;
+
+    case StreamMapType::RightChannel:
+        stream = new PlaybackStream(m_context, m_sampleSpec, m_bufferAttr, m_channelMapRight, socket);
+        break;
+
+    default:
+        break;
+
+    }
+
+    if (stream)
+        m_streams.push_back(stream);
+
+    return stream;
 }
 
 PulseAudioHandler& PulseAudioHandler::instance()
@@ -81,7 +146,7 @@ void PulseAudioHandler::stateChanged(ContextPtr context, void* userData)
     {
     case PA_CONTEXT_READY:
         qDebug() << "PULSE AUDIO CONNECT. PA_CONTEXT_READY";
-        pa_threaded_mainloop_signal(m_mainLoop, 0);
+        pa_threaded_mainloop_signal(instance().mainLoop(), 0);
         break;
 
     case PA_CONTEXT_FAILED:
@@ -90,7 +155,7 @@ void PulseAudioHandler::stateChanged(ContextPtr context, void* userData)
 
     case PA_CONTEXT_TERMINATED:
         qDebug() << "PULSE AUDIO DISCONNECT. PA_CONTEXT_TERMINATED";
-        pa_threaded_mainloop_signal(m_mainLoop, 0);
+        pa_threaded_mainloop_signal(instance().mainLoop(), 0);
         break;
     default:
         qDebug() << "DEFAULT OUTPUT PULSE AUDIO";

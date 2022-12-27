@@ -19,17 +19,17 @@ namespace pulse
         void pause() override;
 
         void writePolledAccess();
-        static void writeAsyncAccess(StreamPtr stream, size_t requestedBytes, void* buffer);
+        static void writeAsyncAccess(StreamPtr stream, size_t requestedBytes, void* kit);
         void receiveData();
 
     protected:
     private:
         using AsyncKit = QPair<QQueue<uint8_t>*, QMutex*>;
 
-        AsyncKit        m_params;
-
         QMutex          m_mutex;
         QQueue<uint8_t> m_queueBuffer;
+
+        AsyncKit        m_kit;
 
     };
 

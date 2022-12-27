@@ -16,13 +16,13 @@ PlaybackStream::PlaybackStream(ContextPtr ctx, SampleSpecification* sample,
     : BasicStream(ctx, sample, buffAttr, map, sock)
     , m_mutex()
     , m_queueBuffer()
-    , m_params(&m_queueBuffer, &m_mutex)
+    , m_kit(&m_queueBuffer, &m_mutex)
 {
 
     MainLoopLocker lock(PulseAudioHandler::instance().mainLoop());
 
     if (Settings::instance().value(Settings::usePlaybackAsyncAccessModel).toBool())
-        pa_stream_set_write_callback(stream(), PlaybackStream::writeAsyncAccess, static_cast<void*>(&m_params));
+        pa_stream_set_write_callback(stream(), PlaybackStream::writeAsyncAccess, static_cast<void*>(&m_kit));
     else
         pa_stream_set_write_callback(stream(), nullptr, NullData);
 
@@ -73,7 +73,7 @@ void PlaybackStream::writePolledAccess()
     uint8_t* b;
     pa_stream_begin_write(stream(), reinterpret_cast<void**>(&b), &len);
 
-    for (int i = 0; i < len; ++i) b[i] = (buffer.data())[i];
+    for (size_t i = 0; i < len; ++i) b[i] = (buffer.data())[i];
 
     pa_stream_write(stream(), b, len, nullptr, 0, PA_SEEK_RELATIVE);
 }
@@ -92,9 +92,9 @@ void PlaybackStream::receiveData()
     for (int i = 0; i < len; ++i) m_queueBuffer.push_back((buffer.data())[i]);
 }
 
-void PlaybackStream::writeAsyncAccess(StreamPtr stream, size_t requestedBytes, void* buffer)
+void PlaybackStream::writeAsyncAccess(StreamPtr stream, size_t requestedBytes, void* kit)
 {
-    AsyncKit* params = static_cast<AsyncKit*>(buffer);
+    AsyncKit* params = static_cast<AsyncKit*>(kit);
 
     QQueue<uint8_t>* queueBuffer = params->first;
     QMutex* mutex = params->second;
@@ -112,7 +112,7 @@ void PlaybackStream::writeAsyncAccess(StreamPtr stream, size_t requestedBytes, v
     if (bytesToFill > requestedBytes)  bytesToFill = requestedBytes;
     pa_stream_begin_write(stream, reinterpret_cast<void**>(&b), &bytesToFill);
 
-    for (int i = 0; i < bytesToFill; ++i)
+    for (size_t i = 0; i < bytesToFill; ++i)
     {
         b[i] = queueBuffer->front();
         queueBuffer->pop_front();
