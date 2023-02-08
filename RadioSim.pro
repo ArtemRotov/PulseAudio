@@ -34,7 +34,6 @@ LIBS += -lpulse
 
 HEADERS +=                              \
     $$PWD/Network/NetSocket.h           \
-    $$PWD/Gui/mainwindow.h              \
     $$PWD/Audio/BufferAttributes.h      \
     $$PWD/Audio/MainLoopLocker.h        \
     $$PWD/Audio/PulseAudioHandler.h     \
@@ -48,7 +47,6 @@ HEADERS +=                              \
 
 SOURCES +=                              \
     $$PWD/Network/NetSocket.cpp         \
-    $$PWD/Gui/mainwindow.cpp            \
     $$PWD/main.cpp                      \
     $$PWD/Audio/BufferAttributes.cpp    \
     $$PWD/Audio/MainLoopLocker.cpp      \
@@ -61,9 +59,6 @@ SOURCES +=                              \
     $$PWD/Audio/PlaybackStream.cpp      \
     $$PWD/Audio/RecordingStream.cpp
 
-
-FORMS += \
-    $$PWD/Gui/mainwindow.ui
 
 #DISTFILES +=
 
