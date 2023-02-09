@@ -1,4 +1,6 @@
 #include <pulse/pulseaudio.h>
+#include <QObject>
+#include <QThread>
 #include "PulseAudioHandler.h"
 #include "MainLoopLocker.h"
 #include "Settings/Settings.h"
@@ -10,9 +12,9 @@
 
 using namespace pulse;
 
-
 PulseAudioHandler::PulseAudioHandler()
-    : m_mainLoop(nullptr)
+    : QObject(nullptr)
+    , m_mainLoop(nullptr)
     , m_mainLoopApi(nullptr)
     , m_context(nullptr)
     , m_channelMapStereo(new ChannelMap)
@@ -22,7 +24,6 @@ PulseAudioHandler::PulseAudioHandler()
     , m_bufferAttr(new BufferAttributes)
     , m_streams()
 {
-    init();
 }
 
 PulseAudioHandler::~PulseAudioHandler()
@@ -45,6 +46,11 @@ PulseAudioHandler::~PulseAudioHandler()
     {
         delete el;
     }
+}
+
+void pulse::initialize()
+{
+    PulseAudioHandler::instance().init();
 }
 
 void PulseAudioHandler::init()
@@ -73,7 +79,7 @@ void PulseAudioHandler::init()
 
 MainLoopPtr PulseAudioHandler::mainLoop() const
 {
-    return instance().m_mainLoop;
+    return m_mainLoop;
 }
 
 RecordingStream* PulseAudioHandler::createRecordingStream(StreamMapType type, NetSocket* socket)
@@ -144,8 +150,24 @@ void PulseAudioHandler::stateChanged(ContextPtr context, void* userData)
 
     switch(pa_context_get_state(context))
     {
+    case PA_CONTEXT_UNCONNECTED:
+        qDebug() << "PA_CONTEXT_UNCONNECTED";
+        break;
+
+    case PA_CONTEXT_CONNECTING:
+        qDebug() << "PA_CONTEXT_CONNECTING";
+        break;
+
+    case PA_CONTEXT_AUTHORIZING:
+        qDebug() << "PA_CONTEXT_AUTHORIZING";
+        break;
+
+    case PA_CONTEXT_SETTING_NAME:
+        qDebug() << "PA_CONTEXT_SETTING_NAME";
+        break;
+
     case PA_CONTEXT_READY:
-        qDebug() << "PULSE AUDIO CONNECT. PA_CONTEXT_READY";
+        qDebug() << "PA_CONTEXT_READY";
         pa_threaded_mainloop_signal(instance().mainLoop(), 0);
         break;
 
@@ -154,7 +176,7 @@ void PulseAudioHandler::stateChanged(ContextPtr context, void* userData)
         break;
 
     case PA_CONTEXT_TERMINATED:
-        qDebug() << "PULSE AUDIO DISCONNECT. PA_CONTEXT_TERMINATED";
+        qDebug() << "PA_CONTEXT_TERMINATED";
         pa_threaded_mainloop_signal(instance().mainLoop(), 0);
         break;
     default:

@@ -1,8 +1,8 @@
 #pragma once
 #include <QQueue>
-#include "BasicStream.h"
 #include <QMutex>
 #include <QPair>
+#include "BasicStream.h"
 
 class NetSocket;
 
@@ -30,7 +30,6 @@ namespace pulse
         QQueue<uint8_t> m_queueBuffer;
 
         AsyncKit        m_kit;
-
     };
 
 

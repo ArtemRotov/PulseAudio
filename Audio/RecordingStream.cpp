@@ -26,14 +26,33 @@ RecordingStream::RecordingStream(ContextPtr ctx, SampleSpecification* sample,
         qDebug() << "Recording Stream is not connected";
     while (true)
     {
-        int ret = pa_stream_get_state(stream());
-        if (ret == PA_STREAM_READY)
-            break;
-        else if (ret == PA_STREAM_FAILED)
+        int status = pa_stream_get_state(stream());
+
+        switch (status)
         {
-            qDebug() << "PA_STREAM_FAILED";
+        case PA_STREAM_UNCONNECTED:
+            qDebug() << "PA_STREAM_UNCONNECTED";
+            break;
+
+        case PA_STREAM_CREATING:
+            qDebug() << "PA_STREAM_CREATING";
+            break;
+
+        case PA_STREAM_READY:
+            qDebug() << "PA_STREAM_READY";
             return;
+
+        case PA_STREAM_FAILED:
+            qDebug() << "PA_STREAM_FAILED";
+            std::runtime_error("PA_STREAM_FAILED");
+            break;
+
+        case PA_STREAM_TERMINATED:
+            qDebug() << "PA_STREAM_TERMINATED";
+            std::runtime_error("PA_STREAM_TERMINATED");
+            break;
         }
+
         pa_threaded_mainloop_wait(PulseAudioHandler::instance().mainLoop());
     }
 }

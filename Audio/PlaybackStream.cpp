@@ -1,5 +1,6 @@
 #include <pulse/stream.h>
 #include <QDebug>
+#include <stdexcept>
 #include "PlaybackStream.h"
 #include "BufferAttributes.h"
 #include "PulseAudioHandler.h"
@@ -18,27 +19,51 @@ PlaybackStream::PlaybackStream(ContextPtr ctx, SampleSpecification* sample,
     , m_queueBuffer()
     , m_kit(&m_queueBuffer, &m_mutex)
 {
-
     MainLoopLocker lock(PulseAudioHandler::instance().mainLoop());
 
     if (Settings::instance().value(Settings::usePlaybackAsyncAccessModel).toBool())
+    {
         pa_stream_set_write_callback(stream(), PlaybackStream::writeAsyncAccess, static_cast<void*>(&m_kit));
+        socket()->setReceiveMethod(std::bind(&PlaybackStream::receiveData, this));
+    }
     else
+    {
         pa_stream_set_write_callback(stream(), nullptr, NullData);
+        socket()->setReceiveMethod(std::bind(&PlaybackStream::writePolledAccess, this));
+    }
 
     if (pa_stream_connect_playback(stream(), BasicDevice, bufferAttributes()->get(),
                                    PlaybStreamFlags, nullptr, nullptr) != 0)
         qDebug() << "Recording Stream is not connected";
     while (true)
     {
-        int ret = pa_stream_get_state(stream());
-        if (ret == PA_STREAM_READY)
-            break;
-        else if (ret == PA_STREAM_FAILED)
+        int status = pa_stream_get_state(stream());
+
+        switch (status)
         {
-            qDebug() << "PA_STREAM_FAILED";
+        case PA_STREAM_UNCONNECTED:
+            qDebug() << "PA_STREAM_UNCONNECTED";
+            break;
+
+        case PA_STREAM_CREATING:
+            qDebug() << "PA_STREAM_CREATING";
+            break;
+
+        case PA_STREAM_READY:
+            qDebug() << "PA_STREAM_READY";
             return;
+
+        case PA_STREAM_FAILED:
+            qDebug() << "PA_STREAM_FAILED";
+            std::runtime_error("PA_STREAM_FAILED");
+            break;
+
+        case PA_STREAM_TERMINATED:
+            qDebug() << "PA_STREAM_TERMINATED";
+            std::runtime_error("PA_STREAM_TERMINATED");
+            break;
         }
+
         pa_threaded_mainloop_wait(PulseAudioHandler::instance().mainLoop());
     }
 }

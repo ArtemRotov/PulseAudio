@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <string>
 #include <pulse/thread-mainloop.h>
+#include <mutex>
 
 #include "def.h"
 
@@ -10,13 +11,17 @@ class NetSocket;
 
 namespace pulse
 {
+    void initialize();
 
     class BasicStream;
     class RecordingStream;
     class PlaybackStream;
 
-    class PulseAudioHandler
+    class PulseAudioHandler : public QObject
     {
+        Q_OBJECT
+        friend void pulse::initialize();
+
         // Singleton notation
         PulseAudioHandler();
         PulseAudioHandler(const PulseAudioHandler& );
@@ -36,7 +41,6 @@ namespace pulse
         RecordingStream* createRecordingStream(StreamMapType type, NetSocket* socket);
         PlaybackStream* createPlaybackStream(StreamMapType type, NetSocket* socket);
 
-    protected:
     private:
         void init();
         void doDeviceInfo() const;
@@ -53,8 +57,7 @@ namespace pulse
         SampleSpecification*    m_sampleSpec;
         BufferAttributes*       m_bufferAttr;
 
-        QVector<BasicStream*>    m_streams;
-
+        QVector<BasicStream*>   m_streams;
     };
 
 

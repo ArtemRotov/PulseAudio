@@ -21,7 +21,7 @@ namespace pulse
 
     protected:
     private:
-        void init();
+        static void streamStateCallBack(StreamPtr s, void *mainloop);
 
         NetSocket*              m_sock;
 

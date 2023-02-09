@@ -43,7 +43,8 @@ HEADERS +=                              \
     $$PWD/Audio/BasicStream.h           \
     $$PWD/Audio/PlaybackStream.h        \
     $$PWD/Audio/RecordingStream.h       \
-    $$PWD/def.h
+    $$PWD/def.h \
+    mainwindow.h
 
 SOURCES +=                              \
     $$PWD/Network/NetSocket.cpp         \
@@ -53,14 +54,17 @@ SOURCES +=                              \
     $$PWD/Audio/PulseAudioHandler.cpp   \
     $$PWD/Audio/SampleSpecification.cpp \
     $$PWD/example.cpp                   \
-    $$PWD/PA_DocumentationTranslate.cpp \
     $$PWD/Settings/Settings.cpp         \
     $$PWD/Audio/BasicStream.cpp         \
     $$PWD/Audio/PlaybackStream.cpp      \
-    $$PWD/Audio/RecordingStream.cpp
+    $$PWD/Audio/RecordingStream.cpp \
+    mainwindow.cpp
 
 
 #DISTFILES +=
 
 #QMAKE_CFLAGS += -fpermissive
 #QMAKE_CXXFLAGS += -fpermissive
+
+FORMS += \
+    mainwindow.ui

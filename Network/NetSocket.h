@@ -4,7 +4,6 @@
 class NetSocket : public QObject
 {
     Q_OBJECT
-
 public:
     using ReceiveMethod = std::function<void ()>;
 
@@ -18,7 +17,6 @@ public:
 
 private slots:
    // void onSockConnected();
-    void readyRead();
     //void onSockDisconnected();
     void error(QAbstractSocket::SocketError err );
 

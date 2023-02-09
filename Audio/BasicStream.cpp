@@ -25,7 +25,9 @@ BasicStream::BasicStream(ContextPtr ctx, SampleSpecification* sample,
     MainLoopLocker lock(PulseAudioHandler::instance().mainLoop());
 
     m_stream = pa_stream_new(m_context, name.toLocal8Bit().data(), m_sampleSpec->get(), m_channelMap);
-    pa_stream_set_state_callback(m_stream, nullptr, PulseAudioHandler::instance().mainLoop());
+    pa_stream_set_state_callback(m_stream,
+                                 streamStateCallBack,
+                                 PulseAudioHandler::instance().mainLoop());
 }
 
 BasicStream::~BasicStream()
@@ -55,4 +57,10 @@ NetSocket* BasicStream::socket() const
 void BasicStream::setSocket(NetSocket* sock)
 {
     m_sock = sock;
+}
+
+void BasicStream::streamStateCallBack(StreamPtr s, void *mainloop)
+{
+    Q_UNUSED(s)
+    pa_threaded_mainloop_signal((pa_threaded_mainloop*)mainloop, 0);
 }

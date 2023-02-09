@@ -58,6 +58,6 @@ namespace pulse
     const pa_stream_flags_t PlaybStreamFlags = pa_stream_flags_t(PA_STREAM_START_CORKED |
     PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_NOT_MONOTONIC | PA_STREAM_AUTO_TIMING_UPDATE | PA_STREAM_ADJUST_LATENCY);
 
-    const pa_stream_flags_t RecStreamFlags = pa_stream_flags_t(PA_STREAM_ADJUST_LATENCY | PA_STREAM_START_MUTED);
+    const pa_stream_flags_t RecStreamFlags = pa_stream_flags_t(PA_STREAM_ADJUST_LATENCY /*| PA_STREAM_START_MUTED*/);
 
 }
