@@ -9,10 +9,11 @@ namespace pulse
     class BasicStream : public IStream
     {
     public:
-        explicit BasicStream(ContextPtr ctx, SampleSpecification* sample,
+        explicit BasicStream(const QString &n, ContextPtr ctx, SampleSpecification* sample,
                              BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock);
         ~BasicStream();
 
+        QString name() const;
         StreamPtr stream() const;
         BufferAttributes* bufferAttributes() const;
 
@@ -22,6 +23,8 @@ namespace pulse
     protected:
     private:
         static void streamStateCallBack(StreamPtr s, void *mainloop);
+
+        QString                 m_name;
 
         NetSocket*              m_sock;
 

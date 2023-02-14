@@ -47,16 +47,6 @@ int main(int argc, char *argv[])
     NetSocket sockSend("127.0.0.1", 22222);
 
     pulse::RecordingStream* rstream1 = pa.createRecordingStream(pulse::StreamMapType::StereoChannel, &sockSend);
-    rstream1->pause();
-    rstream1->addConsumer("127.0.0.1",11111);
-
-//    pulse::RecordingStream* rstream2 = pulse::PulseAudioHandler::instance().createRecordingStream(pulse::StreamMapType::StereoChannel, &sockSend);
-//    rstream2->pause();
-//    rstream2->addConsumer("192.9.206.60",11112);
-
-//    pulse::RecordingStream* rstream3 = pulse::PulseAudioHandler::instance().createRecordingStream(pulse::StreamMapType::StereoChannel, &sockSend);
-//    rstream3->pause();
-//    rstream3->addConsumer("192.9.206.60",11113);
 
 
 
