@@ -12,8 +12,11 @@ NetSocket::NetSocket(const QString &addr, int port)
     else
         qDebug() << "Bind failed";
 
-    //connect(m_sock, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error), this, &NetSocket::error);
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    connect(m_sock, QOverload<QAbstractSocket::SocketError>::of(&QAbstractSocket::error), this, &NetSocket::error);
+#else
     connect(m_sock, &QAbstractSocket::errorOccurred, this, &NetSocket::error);
+#endif
     qDebug() << m_sock->state();
 }
 
