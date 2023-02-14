@@ -12,8 +12,8 @@ using namespace pulse;
 RecordingStream::RecordingStream(ContextPtr ctx, SampleSpecification* sample,
                 BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock)
     : BasicStream(ctx, sample, buffAttr, map, sock)
-    , m_subscribers()
-    , m_kit(this, &m_subscribers)
+    , m_consumers()
+    , m_kit(this, &m_consumers)
 {
     MainLoopLocker lock(PulseAudioHandler::instance().mainLoop());
 
@@ -79,7 +79,7 @@ void RecordingStream::read(StreamPtr stream, size_t nbytes, void* kit)
     AsyncKit* params = static_cast<AsyncKit*>(kit);
 
     RecordingStream* thisStream = params->first;
-    const Subscribers* subscribers = params->second;
+    const Consumers* consumers = params->second;
 
     while (true)
     {
@@ -104,7 +104,7 @@ void RecordingStream::read(StreamPtr stream, size_t nbytes, void* kit)
             {
                 int bytes = ((n - i) < (size_t)fragsize) ? n - i : fragsize;
 
-                for (const Subscriber &s: *subscribers)
+                for (const Consumer &s: *consumers)
                     thisStream->socket()->send((void*)buffer, bytes, s.address, s.port);
 
                 i += bytes;
@@ -116,7 +116,7 @@ void RecordingStream::read(StreamPtr stream, size_t nbytes, void* kit)
     }
 }
 
-void RecordingStream::addSubscriber(const QString &addr, int port)
+void RecordingStream::addConsumer(const QString &addr, int port)
 {
-    m_subscribers.append(Subscriber(addr,port));
+    m_consumers.append(Consumer(addr,port));
 }

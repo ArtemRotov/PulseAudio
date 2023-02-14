@@ -36,7 +36,7 @@ void Settings::initDefaults()
 {
     setDefaultValue(pulseApplicationName, "RadioSim");
     setDefaultValue(usePlaybackAsyncAccessModel, false);
-    setDefaultValue(useRecordAsyncAccessModel, false);
+    setDefaultValue(useRecordAsyncAccessModel, true);
 
     setDefaultValue(sampleFormat, 3);
     setDefaultValue(sampleRate, 48000);

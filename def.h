@@ -38,17 +38,17 @@ namespace pulse
     };
 
 
-    struct Subscriber
+    struct Consumer
     {
-        Subscriber() = default;
-        Subscriber(const QString &a, int p) : address(a), port(p) {}
-        ~Subscriber() = default;
+        Consumer() = default;
+        Consumer(const QString &a, int p) : address(a), port(p) {}
+        ~Consumer() = default;
 
         QString address;
         int     port;
     };
 
-    using Subscribers = QVector<Subscriber>;
+    using Consumers = QVector<Consumer>;
 
 
     const char* const BasicDevice = nullptr;

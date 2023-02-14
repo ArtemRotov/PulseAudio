@@ -42,15 +42,15 @@ int main(int argc, char *argv[])
     NetSocket sockSend("192.9.206.60", 22222);
     pulse::RecordingStream* rstream1 = pulse::PulseAudioHandler::instance().createRecordingStream(pulse::StreamMapType::StereoChannel, &sockSend);
     rstream1->pause();
-    rstream1->addSubscriber("192.9.206.60",11111);
+    rstream1->addConsumer("192.9.206.60",11111);
 
     pulse::RecordingStream* rstream2 = pulse::PulseAudioHandler::instance().createRecordingStream(pulse::StreamMapType::StereoChannel, &sockSend);
     rstream2->pause();
-    rstream2->addSubscriber("192.9.206.60",11112);
+    rstream2->addConsumer("192.9.206.60",11112);
 
     pulse::RecordingStream* rstream3 = pulse::PulseAudioHandler::instance().createRecordingStream(pulse::StreamMapType::StereoChannel, &sockSend);
     rstream3->pause();
-    rstream3->addSubscriber("192.9.206.60",11113);
+    rstream3->addConsumer("192.9.206.60",11113);
 
 
 

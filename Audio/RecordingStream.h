@@ -13,7 +13,7 @@ namespace pulse
                                  BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock);
         ~RecordingStream();
 
-        void addSubscriber(const QString &addr, int port);
+        void addConsumer(const QString &addr, int port);
 
         void resume() override;
         void pause() override;
@@ -22,9 +22,9 @@ namespace pulse
     private:
         static void read(StreamPtr stream, size_t nbytes, void* kit);
 
-        using AsyncKit = QPair<RecordingStream*, Subscribers*>;
+        using AsyncKit = QPair<RecordingStream*, Consumers*>;
 
-        Subscribers m_subscribers;
+        Consumers m_consumers;
 
         AsyncKit    m_kit;
 
