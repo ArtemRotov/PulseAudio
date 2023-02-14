@@ -126,6 +126,7 @@ void PlaybackStream::writeAsyncAccess(StreamPtr stream, size_t requestedBytes, v
     QMutex* mutex = params->second;
 
     QMutexLocker lock(mutex);
+    MainLoopLocker lock2(PulseAudioHandler::instance().mainLoop());
 
     if (queueBuffer->empty())
     {
