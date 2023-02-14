@@ -10,9 +10,10 @@
 using namespace pulse;
 
 
-BasicStream::BasicStream(ContextPtr ctx, SampleSpecification* sample,
-                BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock)
+BasicStream::BasicStream(const QString &n, ContextPtr ctx, SampleSpecification* sample,
+                         BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock)
     : IStream()
+    , m_name(n)
     , m_sock(sock)
     , m_context(ctx)
     , m_sampleSpec(sample)
@@ -36,6 +37,11 @@ BasicStream::~BasicStream()
 
     pa_stream_disconnect(m_stream);
     pa_stream_unref(m_stream);
+}
+
+QString BasicStream::name() const
+{
+    return m_name;
 }
 
 StreamPtr BasicStream::stream() const

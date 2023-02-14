@@ -11,8 +11,8 @@ namespace pulse
     class PlaybackStream : public BasicStream
     {
     public:
-        explicit PlaybackStream(ContextPtr ctx, SampleSpecification* sample,
-                                 BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock);
+        explicit PlaybackStream(const QString &n, ContextPtr ctx, SampleSpecification* sample,
+                                BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock);
         ~PlaybackStream();
 
         void resume() override;

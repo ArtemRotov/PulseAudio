@@ -38,8 +38,8 @@ namespace pulse
 
         MainLoopPtr mainLoop() const;
 
-        RecordingStream* createRecordingStream(StreamMapType type, NetSocket* socket);
-        PlaybackStream* createPlaybackStream(StreamMapType type, NetSocket* socket);
+        RecordingStream* createRecordingStream(const QString &name, StreamMapType type, NetSocket* socket);
+        PlaybackStream* createPlaybackStream(const QString &name, StreamMapType type, NetSocket* socket);
 
     private:
         void init();

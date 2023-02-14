@@ -9,9 +9,9 @@
 using namespace pulse;
 
 
-RecordingStream::RecordingStream(ContextPtr ctx, SampleSpecification* sample,
-                BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock)
-    : BasicStream(ctx, sample, buffAttr, map, sock)
+RecordingStream::RecordingStream(const QString &n, ContextPtr ctx, SampleSpecification* sample,
+                                 BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock)
+    : BasicStream(n, ctx, sample, buffAttr, map, sock)
     , m_consumers()
     , m_kit(this, &m_consumers)
 {
@@ -31,25 +31,25 @@ RecordingStream::RecordingStream(ContextPtr ctx, SampleSpecification* sample,
         switch (status)
         {
         case PA_STREAM_UNCONNECTED:
-            qDebug() << "PA_STREAM_UNCONNECTED";
+            qDebug() << name() << " PA_STREAM_UNCONNECTED";
             break;
 
         case PA_STREAM_CREATING:
-            qDebug() << "PA_STREAM_CREATING";
+            qDebug() << name() << " PA_STREAM_CREATING";
             break;
 
         case PA_STREAM_READY:
-            qDebug() << "PA_STREAM_READY";
+            qDebug() << name() << " PA_STREAM_READY";
             return;
 
         case PA_STREAM_FAILED:
-            qDebug() << "PA_STREAM_FAILED";
-            std::runtime_error("PA_STREAM_FAILED");
+            qDebug() << name() << " PA_STREAM_FAILED";
+            std::runtime_error(QString(name() + " PA_STREAM_FAILED").toStdString());
             break;
 
         case PA_STREAM_TERMINATED:
             qDebug() << "PA_STREAM_TERMINATED";
-            std::runtime_error("PA_STREAM_TERMINATED");
+            std::runtime_error(QString(name() + " PA_STREAM_TERMINATED").toStdString());
             break;
         }
 

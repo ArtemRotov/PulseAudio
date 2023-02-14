@@ -9,7 +9,6 @@
 #include "Audio/RecordingStream.h"
 #include "Audio/PlaybackStream.h"
 
-
 using namespace pulse;
 
 PulseAudioHandler::PulseAudioHandler()
@@ -79,27 +78,27 @@ MainLoopPtr PulseAudioHandler::mainLoop() const
     return m_mainLoop;
 }
 
-RecordingStream* PulseAudioHandler::createRecordingStream(StreamMapType type, NetSocket* socket)
+RecordingStream* PulseAudioHandler::createRecordingStream(const QString &name, StreamMapType type, NetSocket* socket)
 {
     RecordingStream* stream = nullptr;
     switch (type)
     {
     case StreamMapType::StereoChannel:
-        stream = new RecordingStream(m_context, m_sampleSpec, m_bufferAttr, m_channelMapStereo, socket);
+        stream = new RecordingStream(name, m_context, m_sampleSpec, m_bufferAttr, m_channelMapStereo, socket);
         break;
 
     case StreamMapType::LeftChannel:
-        stream = new RecordingStream(m_context, m_sampleSpec, m_bufferAttr, m_channelMapLeft, socket);
+        stream = new RecordingStream(name, m_context, m_sampleSpec, m_bufferAttr, m_channelMapLeft, socket);
         break;
 
     case StreamMapType::RightChannel:
-        stream = new RecordingStream(m_context, m_sampleSpec, m_bufferAttr, m_channelMapRight, socket);
+        stream = new RecordingStream(name, m_context, m_sampleSpec, m_bufferAttr, m_channelMapRight, socket);
         break;
 
     default:
         break;
 
-    }
+    } 
 
     if (stream)
         m_streams.push_back(stream);
@@ -107,21 +106,21 @@ RecordingStream* PulseAudioHandler::createRecordingStream(StreamMapType type, Ne
     return stream;
 }
 
-PlaybackStream* PulseAudioHandler::createPlaybackStream(StreamMapType type, NetSocket* socket)
+PlaybackStream* PulseAudioHandler::createPlaybackStream(const QString &name, StreamMapType type, NetSocket* socket)
 {
     PlaybackStream* stream = nullptr;
     switch (type)
     {
     case StreamMapType::StereoChannel:
-        stream = new PlaybackStream(m_context, m_sampleSpec, m_bufferAttr, m_channelMapStereo, socket);
+        stream = new PlaybackStream(name, m_context, m_sampleSpec, m_bufferAttr, m_channelMapStereo, socket);
         break;
 
     case StreamMapType::LeftChannel:
-        stream = new PlaybackStream(m_context, m_sampleSpec, m_bufferAttr, m_channelMapLeft, socket);
+        stream = new PlaybackStream(name, m_context, m_sampleSpec, m_bufferAttr, m_channelMapLeft, socket);
         break;
 
     case StreamMapType::RightChannel:
-        stream = new PlaybackStream(m_context, m_sampleSpec, m_bufferAttr, m_channelMapRight, socket);
+        stream = new PlaybackStream(name, m_context, m_sampleSpec, m_bufferAttr, m_channelMapRight, socket);
         break;
 
     default:
@@ -138,6 +137,7 @@ PlaybackStream* PulseAudioHandler::createPlaybackStream(StreamMapType type, NetS
 PulseAudioHandler& PulseAudioHandler::instance()
 {
     static PulseAudioHandler theSingleInstance;
+    //std::call_once(flag1,[&](){theSingleInstance.init();});
     return theSingleInstance;
 }
 
