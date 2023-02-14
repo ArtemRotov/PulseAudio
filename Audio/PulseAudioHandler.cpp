@@ -31,6 +31,8 @@ PulseAudioHandler::~PulseAudioHandler()
     MainLoopLocker lock(m_mainLoop);
     pa_context_unref(m_context);
     pa_context_disconnect(m_context);
+
+    for (BasicStream* el : m_streams) delete el;
     lock.unlock();
 
     pa_threaded_mainloop_stop(m_mainLoop);
@@ -41,11 +43,6 @@ PulseAudioHandler::~PulseAudioHandler()
     delete m_channelMapRight;
     delete m_sampleSpec;
     delete m_bufferAttr;
-
-    for (BasicStream* el : m_streams)
-    {
-        delete el;
-    }
 }
 
 void pulse::initialize()

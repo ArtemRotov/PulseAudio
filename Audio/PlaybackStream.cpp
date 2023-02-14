@@ -92,6 +92,7 @@ void PlaybackStream::writePolledAccess()
     if (len <= 0)
         return;
 
+    MainLoopLocker lock(PulseAudioHandler::instance().mainLoop());
     size_t requestedBytes = pa_stream_writable_size(stream());
     if (len > requestedBytes)  len = requestedBytes;
 
@@ -100,7 +101,7 @@ void PlaybackStream::writePolledAccess()
 
     for (size_t i = 0; i < len; ++i) b[i] = (buffer.data())[i];
 
-    pa_stream_write(stream(), b, len, nullptr, 0, PA_SEEK_RELATIVE);
+    pa_stream_write(stream(), b, len, nullptr, 0, PA_SEEK_RELATIVE_END);
 }
 
 void PlaybackStream::receiveData()

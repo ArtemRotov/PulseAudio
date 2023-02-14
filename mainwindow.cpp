@@ -2,14 +2,22 @@
 #include "ui_mainwindow.h"
 
 
-MainWindow::MainWindow(pulse::RecordingStream* str, QWidget *parent)
+MainWindow::MainWindow(pulse::RecordingStream* l, pulse::RecordingStream* r, pulse::RecordingStream* s, QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , stream(str)
+    , left(l)
+    , right(r)
+    , stereo(s)
 {
     ui->setupUi(this);
-    connect(this->ui->pushButton, &QAbstractButton::pressed, this, &MainWindow::buttonPressed);
-    connect(this->ui->pushButton, &QAbstractButton::released, this, &MainWindow::buttonReleased);
+    connect(this->ui->pbLeft, &QAbstractButton::pressed, this, &MainWindow::pbLPressed);
+    connect(this->ui->pbLeft, &QAbstractButton::released, this, &MainWindow::pbLReleased);
+
+    connect(this->ui->pbRight, &QAbstractButton::pressed, this, &MainWindow::pbRPressed);
+    connect(this->ui->pbRight, &QAbstractButton::released, this, &MainWindow::pbRReleased);
+
+    connect(this->ui->pbStereo, &QAbstractButton::pressed, this, &MainWindow::pbSPressed);
+    connect(this->ui->pbStereo, &QAbstractButton::released, this, &MainWindow::pbSReleased);
     show();
 }
 
@@ -18,22 +26,32 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::buttonPressed()
+void MainWindow::pbLPressed()
 {
-    static bool fl = 0;
-    if (!fl)
-    {
-        stream->resume();
-        fl = 1;
-    }
-    else
-    {
-        stream->pause();
-        fl = 0;
-    }
+    left->resume();
 }
 
-void MainWindow::buttonReleased()
+void MainWindow::pbLReleased()
 {
-//    stream->pause();
+    left->pause();
+}
+
+void MainWindow::pbRPressed()
+{
+    right->resume();
+}
+
+void MainWindow::pbRReleased()
+{
+    right->pause();
+}
+
+void MainWindow::pbSPressed()
+{
+    stereo->resume();
+}
+
+void MainWindow::pbSReleased()
+{
+    stereo->pause();
 }
