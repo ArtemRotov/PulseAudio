@@ -35,14 +35,6 @@ int main(int argc, char *argv[])
 //                                                              &sockIn2);
 //    stream2->resume();
 
-//    NetSocket sockIn3("192.9.206.60", 11113);
-//    pulse::PlaybackStream* stream3 = pulse::PulseAudioHandler::instance().createPlaybackStream(pulse::StreamMapType::StereoChannel,
-//                                                              &sockIn3);
-//    stream3->resume();
-
-
-
-//    // На отправку
 
     NetSocket sockSend("127.0.0.1", 22222);
 

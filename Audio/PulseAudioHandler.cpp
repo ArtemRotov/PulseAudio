@@ -11,6 +11,10 @@
 
 using namespace pulse;
 
+<<<<<<< HEAD
+=======
+std::once_flag flag1;
+>>>>>>> a7d6cae (problem reproduction)
 
 PulseAudioHandler::PulseAudioHandler()
     : QObject(nullptr)
@@ -184,9 +188,13 @@ PulseAudioHandler& PulseAudioHandler::instance()
 {
     static std::once_flag flag1;
     static PulseAudioHandler theSingleInstance;
+<<<<<<< HEAD
 
     std::call_once(flag1,[&](){theSingleInstance.init();});
 
+=======
+    std::call_once(flag1,[&](){theSingleInstance.init();});
+>>>>>>> a7d6cae (problem reproduction)
     return theSingleInstance;
 }
 
