@@ -18,43 +18,45 @@ int main(int argc, char *argv[])
     QApplication::setOrganizationName( "Vniira" );
     QApplication::setApplicationName( "RadioSim" );
 
-    pulse::initialize();
+    pulse::PulseAudioHandler::instance();
 
-    // На прием
-    NetSocket sockIn("192.9.206.60", 11111);
-    pulse::PlaybackStream* stream1 = pulse::PulseAudioHandler::instance().createPlaybackStream(pulse::StreamMapType::LeftChannel,
-                                                              &sockIn);
-    stream1->resume();
+//    pulse::initialize();
 
-    NetSocket sockIn2("192.9.206.60", 11112);
-    pulse::PlaybackStream* stream2 = pulse::PulseAudioHandler::instance().createPlaybackStream(pulse::StreamMapType::RightChannel,
-                                                              &sockIn2);
-    stream2->resume();
+//    // На прием
+//    NetSocket sockIn("192.9.206.60", 11111);
+//    pulse::PlaybackStream* stream1 = pulse::PulseAudioHandler::instance().createPlaybackStream(pulse::StreamMapType::LeftChannel,
+//                                                              &sockIn);
+//    stream1->resume();
 
-    NetSocket sockIn3("192.9.206.60", 11113);
-    pulse::PlaybackStream* stream3 = pulse::PulseAudioHandler::instance().createPlaybackStream(pulse::StreamMapType::StereoChannel,
-                                                              &sockIn3);
-    stream3->resume();
+//    NetSocket sockIn2("192.9.206.60", 11112);
+//    pulse::PlaybackStream* stream2 = pulse::PulseAudioHandler::instance().createPlaybackStream(pulse::StreamMapType::RightChannel,
+//                                                              &sockIn2);
+//    stream2->resume();
 
-
-
-    // На отправку
-    NetSocket sockSend("192.9.206.60", 22222);
-    pulse::RecordingStream* rstream1 = pulse::PulseAudioHandler::instance().createRecordingStream(pulse::StreamMapType::StereoChannel, &sockSend);
-    rstream1->pause();
-    rstream1->addConsumer("192.9.206.60",11111);
-
-    pulse::RecordingStream* rstream2 = pulse::PulseAudioHandler::instance().createRecordingStream(pulse::StreamMapType::StereoChannel, &sockSend);
-    rstream2->pause();
-    rstream2->addConsumer("192.9.206.60",11112);
-
-    pulse::RecordingStream* rstream3 = pulse::PulseAudioHandler::instance().createRecordingStream(pulse::StreamMapType::StereoChannel, &sockSend);
-    rstream3->pause();
-    rstream3->addConsumer("192.9.206.60",11113);
+//    NetSocket sockIn3("192.9.206.60", 11113);
+//    pulse::PlaybackStream* stream3 = pulse::PulseAudioHandler::instance().createPlaybackStream(pulse::StreamMapType::StereoChannel,
+//                                                              &sockIn3);
+//    stream3->resume();
 
 
 
-    MainWindow m(rstream1, rstream2, rstream3, nullptr);
+//    // На отправку
+//    NetSocket sockSend("192.9.206.60", 22222);
+//    pulse::RecordingStream* rstream1 = pulse::PulseAudioHandler::instance().createRecordingStream(pulse::StreamMapType::StereoChannel, &sockSend);
+//    rstream1->pause();
+//    rstream1->addConsumer("192.9.206.60",11111);
+
+//    pulse::RecordingStream* rstream2 = pulse::PulseAudioHandler::instance().createRecordingStream(pulse::StreamMapType::StereoChannel, &sockSend);
+//    rstream2->pause();
+//    rstream2->addConsumer("192.9.206.60",11112);
+
+//    pulse::RecordingStream* rstream3 = pulse::PulseAudioHandler::instance().createRecordingStream(pulse::StreamMapType::StereoChannel, &sockSend);
+//    rstream3->pause();
+//    rstream3->addConsumer("192.9.206.60",11113);
+
+
+
+//    MainWindow m(rstream1, rstream2, rstream3, nullptr);
     app.exec();
 }
 

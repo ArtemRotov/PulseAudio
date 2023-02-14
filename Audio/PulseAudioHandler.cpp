@@ -12,6 +12,8 @@
 
 using namespace pulse;
 
+std::once_flag flag1;
+
 PulseAudioHandler::PulseAudioHandler()
     : QObject(nullptr)
     , m_mainLoop(nullptr)
@@ -138,6 +140,7 @@ PlaybackStream* PulseAudioHandler::createPlaybackStream(StreamMapType type, NetS
 PulseAudioHandler& PulseAudioHandler::instance()
 {
     static PulseAudioHandler theSingleInstance;
+    std::call_once(flag1,[&](){theSingleInstance.init();});
     return theSingleInstance;
 }
 
