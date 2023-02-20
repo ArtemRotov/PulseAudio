@@ -22,8 +22,6 @@ int main(int argc, char *argv[])
 
     PulseAudioHandler& pa =  PulseAudioHandler::instance();
 
-//    pulse::initialize();
-
     // На прием
     NetSocket sockIn("127.0.0.1", 11111);
     pulse::PlaybackStream* stream1 = pa.createPlaybackStream(pulse::StreamMapType::LeftChannel,
@@ -39,8 +37,6 @@ int main(int argc, char *argv[])
     NetSocket sockSend("127.0.0.1", 22222);
 
     pulse::RecordingStream* rstream1 = pa.createRecordingStream(pulse::StreamMapType::StereoChannel, &sockSend);
-
-
 
     MainWindow m(rstream1/*, rstream2, rstream3*/);
 
