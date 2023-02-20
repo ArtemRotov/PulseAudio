@@ -44,29 +44,6 @@ int PlaybackStream::initialize()
 
         if (err < 0)
         {
-<<<<<<< HEAD
-        case PA_STREAM_UNCONNECTED:
-            qDebug() << name() << " PA_STREAM_UNCONNECTED";
-            break;
-
-        case PA_STREAM_CREATING:
-            qDebug() << name() << " PA_STREAM_CREATING";
-            break;
-
-        case PA_STREAM_READY:
-            qDebug() << name() << " PA_STREAM_READY";
-            return;
-
-        case PA_STREAM_FAILED:
-            qDebug() << name() << " PA_STREAM_FAILED";
-            std::runtime_error(QString(name() + " PA_STREAM_FAILED").toStdString());
-            break;
-
-        case PA_STREAM_TERMINATED:
-            qDebug() << "PA_STREAM_TERMINATED";
-            std::runtime_error(QString(name() + " PA_STREAM_TERMINATED").toStdString());
-            break;
-=======
            // Old pulse audio servers don't like the ADJUST_LATENCY flag, so retry without that
            err = pa_stream_connect_playback(stream(), BasicDevice, bufferAttributes()->get(),
                                                PlaybStreamFlags2, nullptr, nullptr);
@@ -75,7 +52,6 @@ int PlaybackStream::initialize()
                qDebug() << name() << ": not connected" << pa_strerror(err) << err;
                 return 1;
            }
->>>>>>> callOnceProblemWithStaticInstance
         }
         else
             return 1;
