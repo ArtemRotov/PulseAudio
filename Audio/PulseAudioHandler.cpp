@@ -45,77 +45,54 @@ PulseAudioHandler::~PulseAudioHandler()
     delete m_bufferAttr;
 }
 
-void pulse::initialize()
-{
-    PulseAudioHandler::instance().init();
-}
-
-static void context_poll_unless(pa_threaded_mainloop *pa, pa_context *ctx, pa_context_state_t state)
-{
-    for (;;) {
-        pa_context_state_t s;
-        pa_threaded_mainloop_lock(pa);
-        s = pa_context_get_state(ctx);
-        pa_threaded_mainloop_unlock(pa);
-        if (s == state)
-            break;
-        qApp->processEvents();
-        pa_threaded_mainloop_wait(pa);
-    }
-}
-
-
-void PulseAudioHandler::init()
+void PulseAudioHandler::initialize()
 {
     pulse::Settings::instance();
 
     m_mainLoop = pa_threaded_mainloop_new();
-
     if (!m_mainLoop)
-    {
-        qDebug() << "init: pa_threaded_mainloop_new failed";
-        return;
-    }
+        std::runtime_error("Сouldn't initialize mainloop in PulseAudioHandler");
 
-    // MainLoopLocker lock(m_mainLoop);
     qDebug() << "pa_threaded_mainloop_start" << pa_threaded_mainloop_start(m_mainLoop);
 
     m_mainLoopApi = pa_threaded_mainloop_get_api(m_mainLoop);
     if (!m_mainLoopApi)
-    {
-        qDebug() << "init: pa_threaded_mainloop_get_api failed";
-        return;
-    }
+        std::runtime_error("Сouldn't initialize API in PulseAudioHandler");
 
     m_context = pa_context_new_with_proplist(m_mainLoopApi,
     Settings::value(Settings::pulseApplicationName).toString().toStdString().c_str(),
                                              nullptr);
-
     if (!m_context)
-    {
-        qDebug() << "init: pa_context_new_with_proplist failed";
-        return;
-    }
+        std::runtime_error("Сouldn't initialize context in PulseAudioHandler");
 
     MainLoopLocker lock(m_mainLoop);
-    {
+    pa_context_set_state_callback(m_context, PulseAudioHandler::stateChanged, this);
 
-        pa_context_set_state_callback(m_context,
-                                      PulseAudioHandler::stateChanged, this);
+    pa_context_connect(m_context, nullptr, PA_CONTEXT_NOAUTOSPAWN, nullptr);
 
-        pa_context_connect(m_context, nullptr, PA_CONTEXT_NOAUTOSPAWN, nullptr);
-    }
-
-    //context_poll_unless(m_mainLoop, m_context, PA_CONTEXT_READY);
     pa_threaded_mainloop_wait(m_mainLoop);
 
+    lock.unlock();
     initChannelMaps();
+    lock.lock();
+
     doDeviceInfo();
 }
 
 MainLoopPtr PulseAudioHandler::mainLoop() const
 {
     return m_mainLoop;
+}
+
+QString PulseAudioHandler::nameByStream(StreamPtr s) const
+{
+    for (BasicStream* stream : m_streams)
+    {
+        if (stream->stream() == s)
+            return stream->name();
+    }
+
+    return QString();
 }
 
 RecordingStream* PulseAudioHandler::createRecordingStream(const QString &name, StreamMapType type, NetSocket* socket)
@@ -143,11 +120,14 @@ RecordingStream* PulseAudioHandler::createRecordingStream(const QString &name, S
     } 
 
     stream = new RecordingStream(name, m_context, m_sampleSpec, m_bufferAttr, m, socket);
+    m_streams.push_back(stream);
 
-    if (stream)
-        m_streams.push_back(stream);
+    if (!stream->initialize())
+        return stream;
+    else
+        m_streams.pop_back();
 
-    return stream;
+    return nullptr;
 }
 
 PlaybackStream* PulseAudioHandler::createPlaybackStream(const QString &name, StreamMapType type, NetSocket* socket)
@@ -175,11 +155,14 @@ PlaybackStream* PulseAudioHandler::createPlaybackStream(const QString &name, Str
     }
 
     stream = new PlaybackStream(name, m_context, m_sampleSpec, m_bufferAttr, m, socket);
+    m_streams.push_back(stream);
 
-    if (stream)
-        m_streams.push_back(stream);
+    if (!stream->initialize())
+        return stream;
+    else
+        m_streams.pop_back();
 
-    return stream;
+    return nullptr;
 }
 
 PulseAudioHandler& PulseAudioHandler::instance()
@@ -187,7 +170,7 @@ PulseAudioHandler& PulseAudioHandler::instance()
     static std::once_flag flag;
     static PulseAudioHandler theSingleInstance;
 
-    std::call_once(flag, [&](){ theSingleInstance.init(); });
+    std::call_once(flag, [&](){ theSingleInstance.initialize(); });
 
     return theSingleInstance;
 }

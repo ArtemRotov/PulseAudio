@@ -30,6 +30,12 @@ namespace pulse
     typedef     pa_stream*              StreamPtr;
 
 
+    enum class StreamType
+    {
+        Playback,
+        Recording
+    };
+
     enum class StreamMapType
     {
         StereoChannel,

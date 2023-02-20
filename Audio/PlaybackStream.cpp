@@ -40,7 +40,7 @@ int PlaybackStream::initialize()
                                             PlaybStreamFlags, nullptr, nullptr);
     if ( err != 0)
     {
-        qDebug() << "PlaybackStream Stream is not connected" << pa_strerror(err) << err;
+        qDebug() << name() << ": not connected" << pa_strerror(err) << err;
 
         if (err < 0)
         {
@@ -49,12 +49,16 @@ int PlaybackStream::initialize()
                                                PlaybStreamFlags2, nullptr, nullptr);
            if ( err != 0)
            {
-               qDebug() << "PlaybackStream Stream is not connected" << pa_strerror(err) << err;
+               qDebug() << name() << ": not connected" << pa_strerror(err) << err;
+                return 1;
            }
         }
+        else
+            return 1;
     }
 
     pa_threaded_mainloop_wait(PulseAudioHandler::instance().mainLoop());
+    return 0;
 }
 
 PlaybackStream::~PlaybackStream()

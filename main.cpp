@@ -22,21 +22,14 @@ int main(int argc, char *argv[])
 
     PulseAudioHandler& pa =  PulseAudioHandler::instance();
 
-    // На прием
     NetSocket sockIn("127.0.0.1", 11111);
-    pulse::PlaybackStream* stream1 = pa.createPlaybackStream(pulse::StreamMapType::LeftChannel,
-                                                              &sockIn);
+    PlaybackStream* stream1 = pa.createPlaybackStream("out1", StreamMapType::LeftChannel,&sockIn);
     stream1->resume();
 
-//    NetSocket sockIn2("192.9.206.60", 11112);
-//    pulse::PlaybackStream* stream2 = pulse::PulseAudioHandler::instance().createPlaybackStream(pulse::StreamMapType::RightChannel,
-//                                                              &sockIn2);
-//    stream2->resume();
-
-
     NetSocket sockSend("127.0.0.1", 22222);
+    RecordingStream* rstream1 = pa.createRecordingStream("in1", StreamMapType::StereoChannel, &sockSend);
+    rstream1->addConsumer("127.0.0.1",11111);
 
-    pulse::RecordingStream* rstream1 = pa.createRecordingStream(pulse::StreamMapType::StereoChannel, &sockSend);
 
     MainWindow m(rstream1/*, rstream2, rstream3*/);
 

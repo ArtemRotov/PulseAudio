@@ -31,12 +31,11 @@ private slots:
     void pbSReleased();
 
 private:
+    Ui::MainWindow *ui;
 
     pulse::RecordingStream* left;
     pulse::RecordingStream* right;
     pulse::RecordingStream* stereo;
-
-    Ui::MainWindow *ui;
 };
 
 #endif // MAINWINDOW_H

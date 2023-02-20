@@ -33,10 +33,13 @@ int RecordingStream::initialize()
     int err = pa_stream_connect_record(stream(), BasicDevice, bufferAttributes()->get(), RecStreamFlags);
     if ( err != 0)
     {
-        qDebug() << "RecordingStream Stream is not connected" << pa_strerror(err) << err;
+        qDebug() << name() << ": not connected" << pa_strerror(err) << err;
+
+        return 1;
     }
 
     pa_threaded_mainloop_wait(PulseAudioHandler::instance().mainLoop());
+    return 0;
 }
 
 RecordingStream::~RecordingStream()
