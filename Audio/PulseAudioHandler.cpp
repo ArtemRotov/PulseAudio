@@ -11,14 +11,6 @@
 
 using namespace pulse;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-std::once_flag flag1;
->>>>>>> a7d6cae (problem reproduction)
-=======
->>>>>>> 37b8fdd (little changing)
-
 PulseAudioHandler::PulseAudioHandler()
     : QObject(nullptr)
     , m_mainLoop(nullptr)
@@ -31,6 +23,7 @@ PulseAudioHandler::PulseAudioHandler()
     , m_bufferAttr(new BufferAttributes)
     , m_streams()
 {
+
 }
 
 PulseAudioHandler::~PulseAudioHandler()
@@ -104,15 +97,17 @@ void PulseAudioHandler::init()
         return;
     }
 
+    MainLoopLocker lock(m_mainLoop);
     {
-        MainLoopLocker lock(m_mainLoop);
+
         pa_context_set_state_callback(m_context,
                                       PulseAudioHandler::stateChanged, this);
 
         pa_context_connect(m_context, nullptr, PA_CONTEXT_NOAUTOSPAWN, nullptr);
     }
 
-    context_poll_unless(m_mainLoop, m_context, PA_CONTEXT_READY);
+    //context_poll_unless(m_mainLoop, m_context, PA_CONTEXT_READY);
+    pa_threaded_mainloop_wait(m_mainLoop);
 
     initChannelMaps();
     doDeviceInfo();
@@ -189,18 +184,17 @@ PlaybackStream* PulseAudioHandler::createPlaybackStream(const QString &name, Str
 
 PulseAudioHandler& PulseAudioHandler::instance()
 {
-    static std::once_flag flag1;
+    static std::once_flag flag;
     static PulseAudioHandler theSingleInstance;
 
-    std::call_once(flag1,[&](){theSingleInstance.init();});
+    std::call_once(flag, [&](){ theSingleInstance.init(); });
 
     return theSingleInstance;
 }
 
 void PulseAudioHandler::stateChanged(ContextPtr context, void* userData)
 {
-    // Q_UNUSED(userData);
-    PulseAudioHandler* pthis =  static_cast<PulseAudioHandler*>(userData);
+    PulseAudioHandler* handler =  static_cast<PulseAudioHandler*>(userData);
 
     switch(pa_context_get_state(context))
     {
@@ -222,8 +216,7 @@ void PulseAudioHandler::stateChanged(ContextPtr context, void* userData)
 
     case PA_CONTEXT_READY:
         qDebug() << "PA_CONTEXT_READY";
-        pa_threaded_mainloop_signal(pthis->mainLoop(), 0);
-
+        pa_threaded_mainloop_signal(handler->mainLoop(), 0);
         break;
 
     case PA_CONTEXT_FAILED:
@@ -232,14 +225,12 @@ void PulseAudioHandler::stateChanged(ContextPtr context, void* userData)
 
     case PA_CONTEXT_TERMINATED:
         qDebug() << "PA_CONTEXT_TERMINATED";
-        pa_threaded_mainloop_signal(pthis->mainLoop(), 0);
+        pa_threaded_mainloop_signal(handler->mainLoop(), 0);
         break;
     default:
         qDebug() << "DEFAULT OUTPUT PULSE AUDIO";
         break;
     }
-
-    pa_threaded_mainloop_signal(pthis->mainLoop(), 0);
 }
 
 void PulseAudioHandler::doDeviceInfo()

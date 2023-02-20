@@ -6,7 +6,6 @@
 #include <string>
 
 #include <pulse/thread-mainloop.h>
-#include <mutex>
 
 #include "def.h"
 
@@ -43,9 +42,6 @@ namespace pulse
 
         RecordingStream* createRecordingStream(const QString &name, StreamMapType type, NetSocket* socket);
         PlaybackStream* createPlaybackStream(const QString &name, StreamMapType type, NetSocket* socket);
-
-        void start();
-
 
     private:
         void init();
