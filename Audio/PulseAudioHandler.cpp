@@ -23,6 +23,7 @@ PulseAudioHandler::PulseAudioHandler()
     , m_bufferAttr(new BufferAttributes)
     , m_streams()
 {
+
 }
 
 PulseAudioHandler::~PulseAudioHandler()
@@ -44,32 +45,37 @@ PulseAudioHandler::~PulseAudioHandler()
     delete m_bufferAttr;
 }
 
-void pulse::initialize()
-{
-    PulseAudioHandler::instance().init();
-}
-
-void PulseAudioHandler::init()
+void PulseAudioHandler::initialize()
 {
     pulse::Settings::instance();
 
     m_mainLoop = pa_threaded_mainloop_new();
+    if (!m_mainLoop)
+        std::runtime_error("Сouldn't initialize mainloop in PulseAudioHandler");
 
-    MainLoopLocker lock(m_mainLoop);
-    pa_threaded_mainloop_start(m_mainLoop);
+    qDebug() << "pa_threaded_mainloop_start" << pa_threaded_mainloop_start(m_mainLoop);
 
     m_mainLoopApi = pa_threaded_mainloop_get_api(m_mainLoop);
+    if (!m_mainLoopApi)
+        std::runtime_error("Сouldn't initialize API in PulseAudioHandler");
 
     m_context = pa_context_new_with_proplist(m_mainLoopApi,
     Settings::value(Settings::pulseApplicationName).toString().toStdString().c_str(),
                                              nullptr);
+    if (!m_context)
+        std::runtime_error("Сouldn't initialize context in PulseAudioHandler");
 
-    pa_context_set_state_callback(m_context,
-                                  PulseAudioHandler::stateChanged, nullptr);
+    MainLoopLocker lock(m_mainLoop);
+    pa_context_set_state_callback(m_context, PulseAudioHandler::stateChanged, this);
+
     pa_context_connect(m_context, nullptr, PA_CONTEXT_NOAUTOSPAWN, nullptr);
+
     pa_threaded_mainloop_wait(m_mainLoop);
 
+    lock.unlock();
     initChannelMaps();
+    lock.lock();
+
     doDeviceInfo();
 }
 
@@ -103,11 +109,25 @@ RecordingStream* PulseAudioHandler::createRecordingStream(const QString &name, S
     } 
 
     stream = new RecordingStream(name, m_context, m_sampleSpec, m_bufferAttr, m, socket);
+    m_streams.push_back(stream);
 
-    if (stream)
-        m_streams.push_back(stream);
+    if (!stream->initialize())
+        return stream;
+    else
+        m_streams.pop_back();
 
-    return stream;
+    return nullptr;
+}
+
+QString PulseAudioHandler::nameByStream(StreamPtr s) const
+{
+    for (BasicStream* stream : m_streams)
+    {
+        if (stream->stream() == s)
+            return stream->name();
+    }
+
+    return QString();
 }
 
 PlaybackStream* PulseAudioHandler::createPlaybackStream(const QString &name, StreamMapType type, NetSocket* socket)
@@ -135,23 +155,29 @@ PlaybackStream* PulseAudioHandler::createPlaybackStream(const QString &name, Str
     }
 
     stream = new PlaybackStream(name, m_context, m_sampleSpec, m_bufferAttr, m, socket);
+    m_streams.push_back(stream);
 
-    if (stream)
-        m_streams.push_back(stream);
+    if (!stream->initialize())
+        return stream;
+    else
+        m_streams.pop_back();
 
-    return stream;
+    return nullptr;
 }
 
 PulseAudioHandler& PulseAudioHandler::instance()
 {
+    static std::once_flag flag;
     static PulseAudioHandler theSingleInstance;
-    //std::call_once(flag1,[&](){theSingleInstance.init();});
+
+    std::call_once(flag, [&](){ theSingleInstance.initialize(); });
+
     return theSingleInstance;
 }
 
 void PulseAudioHandler::stateChanged(ContextPtr context, void* userData)
 {
-    Q_UNUSED(userData);
+    PulseAudioHandler* handler =  static_cast<PulseAudioHandler*>(userData);
 
     switch(pa_context_get_state(context))
     {
@@ -173,7 +199,7 @@ void PulseAudioHandler::stateChanged(ContextPtr context, void* userData)
 
     case PA_CONTEXT_READY:
         qDebug() << "PA_CONTEXT_READY";
-        pa_threaded_mainloop_signal(instance().mainLoop(), 0);
+        pa_threaded_mainloop_signal(handler->mainLoop(), 0);
         break;
 
     case PA_CONTEXT_FAILED:
@@ -182,7 +208,7 @@ void PulseAudioHandler::stateChanged(ContextPtr context, void* userData)
 
     case PA_CONTEXT_TERMINATED:
         qDebug() << "PA_CONTEXT_TERMINATED";
-        pa_threaded_mainloop_signal(instance().mainLoop(), 0);
+        pa_threaded_mainloop_signal(handler->mainLoop(), 0);
         break;
     default:
         qDebug() << "DEFAULT OUTPUT PULSE AUDIO";
@@ -190,10 +216,14 @@ void PulseAudioHandler::stateChanged(ContextPtr context, void* userData)
     }
 }
 
-void PulseAudioHandler::doDeviceInfo() const
+void PulseAudioHandler::doDeviceInfo()
 {
     OperationPtr operationSink = pa_context_get_sink_info_list(m_context,
-                                    PulseAudioHandler::deviceInfo, nullptr);
+                                    &PulseAudioHandler::deviceInfo, this);
+
+    if(operationSink == 0)
+        return;
+
     while (true)
     {
         int result = pa_operation_get_state(operationSink);
@@ -204,7 +234,11 @@ void PulseAudioHandler::doDeviceInfo() const
     pa_operation_unref(operationSink);
 
     OperationPtr operationSource = pa_context_get_source_info_list(m_context,
-                                        PulseAudioHandler::deviceInfo, nullptr);
+                                        PulseAudioHandler::deviceInfo, this);
+
+    if(operationSource == 0)
+        return;
+
     while (true)
     {
         int result = pa_operation_get_state(operationSource);

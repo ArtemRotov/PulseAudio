@@ -1,4 +1,5 @@
 #include <pulse/stream.h>
+#include <pulse/error.h>
 #include <QDebug>
 #include <stdexcept>
 #include "PlaybackStream.h"
@@ -7,7 +8,6 @@
 #include "MainLoopLocker.h"
 #include "Settings/Settings.h"
 #include "Network/NetSocket.h"
-
 
 using namespace pulse;
 
@@ -19,6 +19,13 @@ PlaybackStream::PlaybackStream(const QString &n, ContextPtr ctx, SampleSpecifica
     , m_queueBuffer()
     , m_kit(&m_queueBuffer, &m_mutex)
 {
+
+}
+
+int PlaybackStream::initialize()
+{
+    BasicStream::initialize();
+
     MainLoopLocker lock(PulseAudioHandler::instance().mainLoop());
 
     if (Settings::instance().value(Settings::usePlaybackAsyncAccessModel).toBool())
@@ -27,20 +34,17 @@ PlaybackStream::PlaybackStream(const QString &n, ContextPtr ctx, SampleSpecifica
         socket()->setReceiveMethod(std::bind(&PlaybackStream::receiveData, this));
     }
     else
-    {
-        pa_stream_set_write_callback(stream(), nullptr, NullData);
         socket()->setReceiveMethod(std::bind(&PlaybackStream::writePolledAccess, this));
-    }
 
-    if (pa_stream_connect_playback(stream(), BasicDevice, bufferAttributes()->get(),
-                                   PlaybStreamFlags, nullptr, nullptr) != 0)
-        qDebug() << "Recording Stream is not connected";
-    while (true)
+    int err = pa_stream_connect_playback(stream(), BasicDevice, bufferAttributes()->get(),
+                                            PlaybStreamFlags, nullptr, nullptr);
+    if ( err != 0)
     {
-        int status = pa_stream_get_state(stream());
+        qDebug() << name() << ": not connected" << pa_strerror(err) << err;
 
-        switch (status)
+        if (err < 0)
         {
+<<<<<<< HEAD
         case PA_STREAM_UNCONNECTED:
             qDebug() << name() << " PA_STREAM_UNCONNECTED";
             break;
@@ -62,10 +66,23 @@ PlaybackStream::PlaybackStream(const QString &n, ContextPtr ctx, SampleSpecifica
             qDebug() << "PA_STREAM_TERMINATED";
             std::runtime_error(QString(name() + " PA_STREAM_TERMINATED").toStdString());
             break;
+=======
+           // Old pulse audio servers don't like the ADJUST_LATENCY flag, so retry without that
+           err = pa_stream_connect_playback(stream(), BasicDevice, bufferAttributes()->get(),
+                                               PlaybStreamFlags2, nullptr, nullptr);
+           if ( err != 0)
+           {
+               qDebug() << name() << ": not connected" << pa_strerror(err) << err;
+                return 1;
+           }
+>>>>>>> callOnceProblemWithStaticInstance
         }
-
-        pa_threaded_mainloop_wait(PulseAudioHandler::instance().mainLoop());
+        else
+            return 1;
     }
+
+    pa_threaded_mainloop_wait(PulseAudioHandler::instance().mainLoop());
+    return 0;
 }
 
 PlaybackStream::~PlaybackStream()

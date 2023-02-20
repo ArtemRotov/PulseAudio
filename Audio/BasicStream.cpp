@@ -21,6 +21,11 @@ BasicStream::BasicStream(const QString &n, ContextPtr ctx, SampleSpecification* 
     , m_channelMap(map)
     , m_stream(nullptr)
 {
+
+}
+
+int BasicStream::initialize()
+{
     QString name = QCoreApplication::applicationName();
 
     MainLoopLocker lock(PulseAudioHandler::instance().mainLoop());
@@ -28,7 +33,8 @@ BasicStream::BasicStream(const QString &n, ContextPtr ctx, SampleSpecification* 
     m_stream = pa_stream_new(m_context, name.toLocal8Bit().data(), m_sampleSpec->get(), m_channelMap);
     pa_stream_set_state_callback(m_stream,
                                  streamStateCallBack,
-                                 PulseAudioHandler::instance().mainLoop());
+                                 &PulseAudioHandler::instance());
+    return 0;
 }
 
 BasicStream::~BasicStream()
@@ -65,8 +71,34 @@ void BasicStream::setSocket(NetSocket* sock)
     m_sock = sock;
 }
 
-void BasicStream::streamStateCallBack(StreamPtr s, void *mainloop)
+void BasicStream::streamStateCallBack(StreamPtr s, void *userData)
 {
-    Q_UNUSED(s)
-    pa_threaded_mainloop_signal((pa_threaded_mainloop*)mainloop, 0);
+    PulseAudioHandler* handler =  static_cast<PulseAudioHandler*>(userData);
+    QString name = handler->nameByStream(s);
+
+    switch(pa_stream_get_state(s))
+    {
+    case PA_STREAM_UNCONNECTED:
+        qDebug() << name << ": PA_STREAM_UNCONNECTED";
+        break;
+
+    case PA_STREAM_CREATING:
+        qDebug() << name << ": PA_STREAM_CREATING";
+        break;
+
+    case PA_STREAM_READY:
+        qDebug() << name << ": PA_STREAM_READY";
+        pa_threaded_mainloop_signal(static_cast<pa_threaded_mainloop*>(handler->mainLoop()), 0);
+        break;
+
+    case PA_STREAM_FAILED:
+        qDebug() << name << ": PA_STREAM_FAILED";
+        std::runtime_error("PA_STREAM_FAILED");
+        break;
+
+    case PA_STREAM_TERMINATED:
+        qDebug() << name << ": PA_STREAM_TERMINATED";
+        std::runtime_error("PA_STREAM_TERMINATED");
+        break;
+    }
 }

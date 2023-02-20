@@ -7,10 +7,10 @@ using namespace pulse;
 
 BufferAttributes::BufferAttributes()
     : m_maxLength(Settings::value(Settings::bufferMaxLength).toInt())
-    , m_tLength(Settings::value(Settings::bufferTLength).toInt())
-    , m_prebuf(Settings::value(Settings::bufferPrebuf).toInt())
-    , m_minReq(Settings::value(Settings::bufferMinReq).toInt())
-    , m_fragSize(Settings::value(Settings::bufferFragSize).toInt())
+    , m_tLength  (Settings::value(Settings::bufferTLength).toInt())
+    , m_prebuf   (Settings::value(Settings::bufferPrebuf).toInt())
+    , m_minReq   (Settings::value(Settings::bufferMinReq).toInt())
+    , m_fragSize (Settings::value(Settings::bufferFragSize).toInt())
     , m_buffer(new pa_buffer_attr)
 {
     m_buffer->maxlength = m_maxLength;

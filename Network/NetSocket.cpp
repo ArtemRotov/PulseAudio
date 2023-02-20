@@ -17,6 +17,7 @@ NetSocket::NetSocket(const QString &addr, int port)
 #else
     connect(m_sock, &QAbstractSocket::errorOccurred, this, &NetSocket::error);
 #endif
+
     qDebug() << m_sock->state();
 }
 

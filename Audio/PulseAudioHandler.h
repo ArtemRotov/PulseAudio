@@ -1,18 +1,15 @@
 #pragma once
 #include <QCoreApplication>
 #include <QDebug>
-#include <string>
-#include <pulse/thread-mainloop.h>
-#include <mutex>
-
 #include "def.h"
+#include <pulse/thread-mainloop.h>
+
+
 
 class NetSocket;
 
 namespace pulse
 {
-    void initialize();
-
     class BasicStream;
     class RecordingStream;
     class PlaybackStream;
@@ -20,7 +17,6 @@ namespace pulse
     class PulseAudioHandler : public QObject
     {
         Q_OBJECT
-        friend void pulse::initialize();
 
         // Singleton notation
         PulseAudioHandler();
@@ -30,7 +26,7 @@ namespace pulse
         ~PulseAudioHandler();
 
         template <typename T>
-        static void deviceInfo(ContextPtr context, const T* info, int eol, void *udata);
+        static void deviceInfo(ContextPtr context, const T* info, int eol, void *userData);
         static void stateChanged(ContextPtr context, void* userData);
 
     public:
@@ -38,14 +34,17 @@ namespace pulse
 
         MainLoopPtr mainLoop() const;
 
+        QString nameByStream(StreamPtr s) const;
+
         RecordingStream* createRecordingStream(const QString &name, StreamMapType type, NetSocket* socket);
         PlaybackStream* createPlaybackStream(const QString &name, StreamMapType type, NetSocket* socket);
 
     private:
-        void init();
-        void doDeviceInfo() const;
+        void initialize();
+        void doDeviceInfo();
         void initChannelMaps();
 
+    private:
         MainLoopPtr             m_mainLoop;
 
         MainLoopApiPtr          m_mainLoopApi;
@@ -62,20 +61,20 @@ namespace pulse
 
 
     template <typename T>
-    void PulseAudioHandler::deviceInfo(ContextPtr context, const T* info, int eol, void *udata)
+    void PulseAudioHandler::deviceInfo(ContextPtr context, const T* info, int eol, void *userData)
     {
         Q_UNUSED(context);
-        Q_UNUSED(udata);
+
+        PulseAudioHandler* handler =  static_cast<PulseAudioHandler*>(userData);
 
         if (eol != 0)
         {
-            pa_threaded_mainloop_signal(instance().mainLoop(), 0);
+            pa_threaded_mainloop_signal(handler->mainLoop(), 0);
             return;
         }
 
         qDebug() << "Device : " << info->name;
     }
-
 }
 
 

@@ -16,8 +16,6 @@ public:
     void setReceiveMethod(const ReceiveMethod &method);
 
 private slots:
-   // void onSockConnected();
-    //void onSockDisconnected();
     void error(QAbstractSocket::SocketError err );
 
 private:

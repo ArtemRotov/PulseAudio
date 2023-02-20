@@ -1,4 +1,5 @@
 #include <pulse/stream.h>
+#include <pulse/error.h>
 #include "RecordingStream.h"
 #include "BufferAttributes.h"
 #include "PulseAudioHandler.h"
@@ -15,6 +16,13 @@ RecordingStream::RecordingStream(const QString &n, ContextPtr ctx, SampleSpecifi
     , m_consumers()
     , m_kit(this, &m_consumers)
 {
+
+}
+
+int RecordingStream::initialize()
+{
+    BasicStream::initialize();
+
     MainLoopLocker lock(PulseAudioHandler::instance().mainLoop());
 
     if (Settings::instance().value(Settings::useRecordAsyncAccessModel).toBool())
@@ -22,39 +30,15 @@ RecordingStream::RecordingStream(const QString &n, ContextPtr ctx, SampleSpecifi
     else
         pa_stream_set_read_callback(stream(), nullptr, NullData);
 
-    if (pa_stream_connect_record(stream(), BasicDevice, bufferAttributes()->get(), RecStreamFlags) != 0)
-        qDebug() << "Recording Stream is not connected";
-    while (true)
+    int err = pa_stream_connect_record(stream(), BasicDevice, bufferAttributes()->get(), RecStreamFlags);
+    if ( err != 0)
     {
-        int status = pa_stream_get_state(stream());
-
-        switch (status)
-        {
-        case PA_STREAM_UNCONNECTED:
-            qDebug() << name() << " PA_STREAM_UNCONNECTED";
-            break;
-
-        case PA_STREAM_CREATING:
-            qDebug() << name() << " PA_STREAM_CREATING";
-            break;
-
-        case PA_STREAM_READY:
-            qDebug() << name() << " PA_STREAM_READY";
-            return;
-
-        case PA_STREAM_FAILED:
-            qDebug() << name() << " PA_STREAM_FAILED";
-            std::runtime_error(QString(name() + " PA_STREAM_FAILED").toStdString());
-            break;
-
-        case PA_STREAM_TERMINATED:
-            qDebug() << "PA_STREAM_TERMINATED";
-            std::runtime_error(QString(name() + " PA_STREAM_TERMINATED").toStdString());
-            break;
-        }
-
-        pa_threaded_mainloop_wait(PulseAudioHandler::instance().mainLoop());
+        qDebug() << name() << ": not connected" << pa_strerror(err) << err;
+        return 1;
     }
+
+    pa_threaded_mainloop_wait(PulseAudioHandler::instance().mainLoop());
+    return 0;
 }
 
 RecordingStream::~RecordingStream()
@@ -88,7 +72,7 @@ void RecordingStream::read(StreamPtr stream, size_t nbytes, void* kit)
         pa_stream_peek(stream, &data, &n);
 
         if (data == nullptr && n == 0)
-            return;     // Buffer is empty. Process more events
+            return;
 
         else if (data == nullptr && n != 0)
         {

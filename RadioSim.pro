@@ -53,13 +53,13 @@ SOURCES +=                              \
     $$PWD/Audio/MainLoopLocker.cpp      \
     $$PWD/Audio/PulseAudioHandler.cpp   \
     $$PWD/Audio/SampleSpecification.cpp \
-    $$PWD/example.cpp                   \
     $$PWD/Settings/Settings.cpp         \
     $$PWD/Audio/BasicStream.cpp         \
     $$PWD/Audio/PlaybackStream.cpp      \
     $$PWD/Audio/RecordingStream.cpp \
     mainwindow.cpp
 
+OTHER_FILES += $$PWD/example.cpp
 
 #DISTFILES +=
 

@@ -15,6 +15,7 @@ namespace pulse
                                 BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock);
         ~PlaybackStream();
 
+        int initialize() override;
         void resume() override;
         void pause() override;
 

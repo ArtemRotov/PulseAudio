@@ -15,6 +15,7 @@ namespace pulse
 
         void addConsumer(const QString &addr, int port);
 
+        int initialize() override;
         void resume() override;
         void pause() override;
 

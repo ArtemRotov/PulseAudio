@@ -14,6 +14,9 @@ namespace pulse
         ~BasicStream();
 
         QString name() const;
+
+        virtual int initialize();
+
         StreamPtr stream() const;
         BufferAttributes* bufferAttributes() const;
 
@@ -22,7 +25,7 @@ namespace pulse
 
     protected:
     private:
-        static void streamStateCallBack(StreamPtr s, void *mainloop);
+        static void streamStateCallBack(StreamPtr s, void *userData);
 
         QString                 m_name;
 
