@@ -119,24 +119,28 @@ MainLoopPtr PulseAudioHandler::mainLoop() const
 RecordingStream* PulseAudioHandler::createRecordingStream(const QString &name, StreamMapType type, NetSocket* socket)
 {
     RecordingStream* stream = nullptr;
+    ChannelMapPtr m = nullptr;
+
     switch (type)
     {
     case StreamMapType::StereoChannel:
-        stream = new RecordingStream(name, m_context, m_sampleSpec, m_bufferAttr, m_channelMapStereo, socket);
+        m = m_channelMapStereo;
         break;
 
     case StreamMapType::LeftChannel:
-        stream = new RecordingStream(name, m_context, m_sampleSpec, m_bufferAttr, m_channelMapLeft, socket);
+        m = m_channelMapLeft;
         break;
 
     case StreamMapType::RightChannel:
-        stream = new RecordingStream(name, m_context, m_sampleSpec, m_bufferAttr, m_channelMapRight, socket);
+        m = m_channelMapRight;
         break;
 
     default:
+        std::runtime_error("Unrecognized channel map");
         break;
-
     } 
+
+    stream = new RecordingStream(name, m_context, m_sampleSpec, m_bufferAttr, m, socket);
 
     if (stream)
         m_streams.push_back(stream);
@@ -147,24 +151,28 @@ RecordingStream* PulseAudioHandler::createRecordingStream(const QString &name, S
 PlaybackStream* PulseAudioHandler::createPlaybackStream(const QString &name, StreamMapType type, NetSocket* socket)
 {
     PlaybackStream* stream = nullptr;
+    ChannelMapPtr m = nullptr;
+
     switch (type)
     {
     case StreamMapType::StereoChannel:
-        stream = new PlaybackStream(name, m_context, m_sampleSpec, m_bufferAttr, m_channelMapStereo, socket);
+        m = m_channelMapStereo;
         break;
 
     case StreamMapType::LeftChannel:
-        stream = new PlaybackStream(name, m_context, m_sampleSpec, m_bufferAttr, m_channelMapLeft, socket);
+        m = m_channelMapLeft;
         break;
 
     case StreamMapType::RightChannel:
-        stream = new PlaybackStream(name, m_context, m_sampleSpec, m_bufferAttr, m_channelMapRight, socket);
+        m = m_channelMapRight;
         break;
 
     default:
+        std::runtime_error("Unrecognized channel map");
         break;
-
     }
+
+    stream = new PlaybackStream(name, m_context, m_sampleSpec, m_bufferAttr, m, socket);
 
     if (stream)
         m_streams.push_back(stream);
