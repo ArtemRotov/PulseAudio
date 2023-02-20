@@ -1,7 +1,10 @@
 #pragma once
 #include <QCoreApplication>
 #include <QDebug>
+#include <QMutex>
+#include <QWaitCondition>
 #include <string>
+
 #include <pulse/thread-mainloop.h>
 #include <mutex>
 
@@ -30,7 +33,7 @@ namespace pulse
         ~PulseAudioHandler();
 
         template <typename T>
-        static void deviceInfo(ContextPtr context, const T* info, int eol, void *udata);
+        static void deviceInfo(ContextPtr context, const T* info, int eol, void *userData);
         static void stateChanged(ContextPtr context, void* userData);
 
     public:
@@ -41,11 +44,15 @@ namespace pulse
         RecordingStream* createRecordingStream(StreamMapType type, NetSocket* socket);
         PlaybackStream* createPlaybackStream(StreamMapType type, NetSocket* socket);
 
+        void start();
+
+
     private:
         void init();
-        void doDeviceInfo() const;
+        void doDeviceInfo();
         void initChannelMaps();
 
+    private:
         MainLoopPtr             m_mainLoop;
 
         MainLoopApiPtr          m_mainLoopApi;
@@ -58,18 +65,20 @@ namespace pulse
         BufferAttributes*       m_bufferAttr;
 
         QVector<BasicStream*>   m_streams;
+
     };
 
 
     template <typename T>
-    void PulseAudioHandler::deviceInfo(ContextPtr context, const T* info, int eol, void *udata)
+    void PulseAudioHandler::deviceInfo(ContextPtr context, const T* info, int eol, void *userData)
     {
         Q_UNUSED(context);
-        Q_UNUSED(udata);
+        // Q_UNUSED(udata);
+        PulseAudioHandler* pthis =  static_cast<PulseAudioHandler*>(userData);
 
         if (eol != 0)
         {
-            pa_threaded_mainloop_signal(instance().mainLoop(), 0);
+            pa_threaded_mainloop_signal(pthis->mainLoop(), 0);
             return;
         }
 

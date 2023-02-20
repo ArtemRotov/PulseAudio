@@ -10,14 +10,17 @@ MainWindow::MainWindow(pulse::RecordingStream* l, pulse::RecordingStream* r, pul
     , stereo(s)
 {
     ui->setupUi(this);
+
     connect(this->ui->pbLeft, &QAbstractButton::pressed, this, &MainWindow::pbLPressed);
     connect(this->ui->pbLeft, &QAbstractButton::released, this, &MainWindow::pbLReleased);
+
 
     connect(this->ui->pbRight, &QAbstractButton::pressed, this, &MainWindow::pbRPressed);
     connect(this->ui->pbRight, &QAbstractButton::released, this, &MainWindow::pbRReleased);
 
     connect(this->ui->pbStereo, &QAbstractButton::pressed, this, &MainWindow::pbSPressed);
     connect(this->ui->pbStereo, &QAbstractButton::released, this, &MainWindow::pbSReleased);
+
     show();
 }
 
@@ -28,30 +31,36 @@ MainWindow::~MainWindow()
 
 void MainWindow::pbLPressed()
 {
-    left->resume();
+    if(left)
+        left->resume();
 }
 
 void MainWindow::pbLReleased()
 {
-    left->pause();
+    if(left)
+       left->pause();
 }
 
 void MainWindow::pbRPressed()
 {
-    right->resume();
+    if(right)
+       right->resume();
 }
 
 void MainWindow::pbRReleased()
 {
-    right->pause();
+    if(right)
+        right->pause();
 }
 
 void MainWindow::pbSPressed()
 {
-    stereo->resume();
+   if(stereo)
+       stereo->resume();
 }
 
 void MainWindow::pbSReleased()
 {
-    stereo->pause();
+    if(stereo)
+       stereo->pause();
 }

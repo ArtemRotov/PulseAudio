@@ -8,6 +8,7 @@
 #include "Settings/Settings.h"
 #include "Network/NetSocket.h"
 
+#include <pulse/error.h>
 
 using namespace pulse;
 
@@ -28,13 +29,30 @@ PlaybackStream::PlaybackStream(ContextPtr ctx, SampleSpecification* sample,
     }
     else
     {
-        pa_stream_set_write_callback(stream(), nullptr, NullData);
+        // pa_stream_set_write_callback(stream(), nullptr, NullData);
         socket()->setReceiveMethod(std::bind(&PlaybackStream::writePolledAccess, this));
     }
 
-    if (pa_stream_connect_playback(stream(), BasicDevice, bufferAttributes()->get(),
-                                   PlaybStreamFlags, nullptr, nullptr) != 0)
-        qDebug() << "Recording Stream is not connected";
+    int pa_err = pa_stream_connect_playback(stream(), BasicDevice, bufferAttributes()->get(),
+                                            PlaybStreamFlags, nullptr, nullptr);
+    if ( pa_err != 0)
+    {
+        qDebug() << "PlaybackStream Stream is not connected" << pa_strerror(pa_err) << pa_err;
+    }
+
+    if (pa_err < 0) {
+           // Old pulse audio servers don't like the ADJUST_LATENCY flag, so retry without that
+           pa_err = pa_stream_connect_playback(stream(), nullptr, bufferAttributes()->get(),
+              pa_stream_flags_t(PA_STREAM_INTERPOLATE_TIMING
+              | PA_STREAM_AUTO_TIMING_UPDATE),
+              nullptr, nullptr);
+
+           if ( pa_err != 0)
+           {
+               qDebug() << "PlaybackStream Stream is not connected" << pa_strerror(pa_err) << pa_err;
+           }
+    }
+
     while (true)
     {
         int status = pa_stream_get_state(stream());

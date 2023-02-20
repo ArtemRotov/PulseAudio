@@ -12,7 +12,6 @@
 
 using namespace pulse;
 
-std::once_flag flag1;
 
 PulseAudioHandler::PulseAudioHandler()
     : QObject(nullptr)
@@ -52,25 +51,62 @@ void pulse::initialize()
     PulseAudioHandler::instance().init();
 }
 
+static void context_poll_unless(pa_threaded_mainloop *pa, pa_context *ctx, pa_context_state_t state)
+{
+    for (;;) {
+        pa_context_state_t s;
+        pa_threaded_mainloop_lock(pa);
+        s = pa_context_get_state(ctx);
+        pa_threaded_mainloop_unlock(pa);
+        if (s == state)
+            break;
+        qApp->processEvents();
+        pa_threaded_mainloop_wait(pa);
+    }
+}
+
+
 void PulseAudioHandler::init()
 {
     pulse::Settings::instance();
 
     m_mainLoop = pa_threaded_mainloop_new();
 
-    MainLoopLocker lock(m_mainLoop);
-    pa_threaded_mainloop_start(m_mainLoop);
+    if (!m_mainLoop)
+    {
+        qDebug() << "init: pa_threaded_mainloop_new failed";
+        return;
+    }
+
+    // MainLoopLocker lock(m_mainLoop);
+    qDebug() << "pa_threaded_mainloop_start" << pa_threaded_mainloop_start(m_mainLoop);
 
     m_mainLoopApi = pa_threaded_mainloop_get_api(m_mainLoop);
+    if (!m_mainLoopApi)
+    {
+        qDebug() << "init: pa_threaded_mainloop_get_api failed";
+        return;
+    }
 
     m_context = pa_context_new_with_proplist(m_mainLoopApi,
     Settings::value(Settings::pulseApplicationName).toString().toStdString().c_str(),
                                              nullptr);
 
-    pa_context_set_state_callback(m_context,
-                                  PulseAudioHandler::stateChanged, nullptr);
-    pa_context_connect(m_context, nullptr, PA_CONTEXT_NOAUTOSPAWN, nullptr);
-    pa_threaded_mainloop_wait(m_mainLoop);
+    if (!m_context)
+    {
+        qDebug() << "init: pa_context_new_with_proplist failed";
+        return;
+    }
+
+    {
+        MainLoopLocker lock(m_mainLoop);
+        pa_context_set_state_callback(m_context,
+                                      PulseAudioHandler::stateChanged, this);
+
+        pa_context_connect(m_context, nullptr, PA_CONTEXT_NOAUTOSPAWN, nullptr);
+    }
+
+    context_poll_unless(m_mainLoop, m_context, PA_CONTEXT_READY);
 
     initChannelMaps();
     doDeviceInfo();
@@ -139,14 +175,24 @@ PlaybackStream* PulseAudioHandler::createPlaybackStream(StreamMapType type, NetS
 
 PulseAudioHandler& PulseAudioHandler::instance()
 {
+    static std::once_flag flag1;
     static PulseAudioHandler theSingleInstance;
+    static bool binit = false;
+
+//    if(!binit)
+//    {
+//        binit = true;
+//        theSingleInstance.init();
+//    }
+
     std::call_once(flag1,[&](){theSingleInstance.init();});
     return theSingleInstance;
 }
 
 void PulseAudioHandler::stateChanged(ContextPtr context, void* userData)
 {
-    Q_UNUSED(userData);
+    // Q_UNUSED(userData);
+    PulseAudioHandler* pthis =  static_cast<PulseAudioHandler*>(userData);
 
     switch(pa_context_get_state(context))
     {
@@ -168,7 +214,8 @@ void PulseAudioHandler::stateChanged(ContextPtr context, void* userData)
 
     case PA_CONTEXT_READY:
         qDebug() << "PA_CONTEXT_READY";
-        pa_threaded_mainloop_signal(instance().mainLoop(), 0);
+        pa_threaded_mainloop_signal(pthis->mainLoop(), 0);
+
         break;
 
     case PA_CONTEXT_FAILED:
@@ -177,18 +224,24 @@ void PulseAudioHandler::stateChanged(ContextPtr context, void* userData)
 
     case PA_CONTEXT_TERMINATED:
         qDebug() << "PA_CONTEXT_TERMINATED";
-        pa_threaded_mainloop_signal(instance().mainLoop(), 0);
+        pa_threaded_mainloop_signal(pthis->mainLoop(), 0);
         break;
     default:
         qDebug() << "DEFAULT OUTPUT PULSE AUDIO";
         break;
     }
+
+    pa_threaded_mainloop_signal(pthis->mainLoop(), 0);
 }
 
-void PulseAudioHandler::doDeviceInfo() const
+void PulseAudioHandler::doDeviceInfo()
 {
     OperationPtr operationSink = pa_context_get_sink_info_list(m_context,
-                                    PulseAudioHandler::deviceInfo, nullptr);
+                                    &PulseAudioHandler::deviceInfo, this);
+
+    if(operationSink == 0)
+        return;
+
     while (true)
     {
         int result = pa_operation_get_state(operationSink);
@@ -199,7 +252,11 @@ void PulseAudioHandler::doDeviceInfo() const
     pa_operation_unref(operationSink);
 
     OperationPtr operationSource = pa_context_get_source_info_list(m_context,
-                                        PulseAudioHandler::deviceInfo, nullptr);
+                                        PulseAudioHandler::deviceInfo, this);
+
+    if(operationSource == 0)
+        return;
+
     while (true)
     {
         int result = pa_operation_get_state(operationSource);

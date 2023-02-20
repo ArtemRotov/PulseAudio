@@ -12,21 +12,23 @@
 #include "Audio/PlaybackStream.h"
 #include "mainwindow.h"
 
+using namespace pulse;
+
 int main(int argc, char *argv[])
 {
     QApplication app(argc,argv);
     QApplication::setOrganizationName( "Vniira" );
     QApplication::setApplicationName( "RadioSim" );
 
-    pulse::PulseAudioHandler::instance();
+    PulseAudioHandler& pa =  PulseAudioHandler::instance();
 
 //    pulse::initialize();
 
-//    // На прием
-//    NetSocket sockIn("192.9.206.60", 11111);
-//    pulse::PlaybackStream* stream1 = pulse::PulseAudioHandler::instance().createPlaybackStream(pulse::StreamMapType::LeftChannel,
-//                                                              &sockIn);
-//    stream1->resume();
+    // На прием
+    NetSocket sockIn("127.0.0.1", 11111);
+    pulse::PlaybackStream* stream1 = pa.createPlaybackStream(pulse::StreamMapType::LeftChannel,
+                                                              &sockIn);
+    stream1->resume();
 
 //    NetSocket sockIn2("192.9.206.60", 11112);
 //    pulse::PlaybackStream* stream2 = pulse::PulseAudioHandler::instance().createPlaybackStream(pulse::StreamMapType::RightChannel,
@@ -41,10 +43,12 @@ int main(int argc, char *argv[])
 
 
 //    // На отправку
-//    NetSocket sockSend("192.9.206.60", 22222);
-//    pulse::RecordingStream* rstream1 = pulse::PulseAudioHandler::instance().createRecordingStream(pulse::StreamMapType::StereoChannel, &sockSend);
-//    rstream1->pause();
-//    rstream1->addConsumer("192.9.206.60",11111);
+
+    NetSocket sockSend("127.0.0.1", 22222);
+
+    pulse::RecordingStream* rstream1 = pa.createRecordingStream(pulse::StreamMapType::StereoChannel, &sockSend);
+    rstream1->pause();
+    rstream1->addConsumer("127.0.0.1",11111);
 
 //    pulse::RecordingStream* rstream2 = pulse::PulseAudioHandler::instance().createRecordingStream(pulse::StreamMapType::StereoChannel, &sockSend);
 //    rstream2->pause();
@@ -56,7 +60,8 @@ int main(int argc, char *argv[])
 
 
 
-//    MainWindow m(rstream1, rstream2, rstream3, nullptr);
+    MainWindow m(rstream1/*, rstream2, rstream3*/);
+
     app.exec();
 }
 
