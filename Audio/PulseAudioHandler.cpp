@@ -29,14 +29,20 @@ PulseAudioHandler::PulseAudioHandler()
 PulseAudioHandler::~PulseAudioHandler()
 {
     MainLoopLocker lock(m_mainLoop);
-    pa_context_unref(m_context);
-    pa_context_disconnect(m_context);
+    if (m_context)
+    {
+        pa_context_unref(m_context);
+        pa_context_disconnect(m_context);
+    }
 
     for (BasicStream* el : m_streams) delete el;
     lock.unlock();
 
-    pa_threaded_mainloop_stop(m_mainLoop);
-    pa_threaded_mainloop_free(m_mainLoop);
+    if (m_mainLoop)
+    {
+        pa_threaded_mainloop_stop(m_mainLoop);
+        pa_threaded_mainloop_free(m_mainLoop);
+    }
 
     delete m_channelMapStereo;
     delete m_channelMapLeft;
