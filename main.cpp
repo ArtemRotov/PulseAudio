@@ -21,7 +21,8 @@ int main(int argc, char *argv[])
     s1->resume();
 
     NetSocket sockSend("127.0.0.1", 22222);
-    IStream* s2 = handler->newStream("out1",StreamType::Recording, StreamMapType::LeftChannel,&sockIn);
+    IStream* s2 = handler->newStream("out1",StreamType::Recording, StreamMapType::LeftChannel,&sockSend);
+
     handler->connectConsumer(s2,s1);
 
     MainWindow m(s2);
