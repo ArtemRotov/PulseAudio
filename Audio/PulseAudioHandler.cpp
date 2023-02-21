@@ -161,14 +161,14 @@ void PulseAudioHandler::connectConsumer(IStream* source, IStream* consumer)
     RecordingStream* rec = dynamic_cast<RecordingStream*>(source);
     if (!rec)
     {
-        qDebug() << "The source stream is not defined";
+        qDebug() << "Unsuccessful connection: " << rec->name() <<"not defined";
         return;
     }
 
     PlaybackStream* plbck = dynamic_cast<PlaybackStream*>(consumer);
     if (!plbck)
     {
-        qDebug() << "The consumer stream is not defined";
+        qDebug() << "Unsuccessful connection: " << plbck->name() <<"not defined";
         return;
     }
 
