@@ -173,6 +173,7 @@ void PulseAudioHandler::connectConsumer(IStream* source, IStream* consumer)
     }
 
     rec->addConsumer(plbck->socket()->address(), plbck->socket()->port());
+    qDebug() << "Successful connection: " << rec->name() << "-->" << plbck->name();
 }
 
 QString PulseAudioHandler::nameByStream(StreamPtr s) const

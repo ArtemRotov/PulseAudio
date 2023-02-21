@@ -17,11 +17,11 @@ int main(int argc, char *argv[])
     IHandler* handler = newHandler();
 
     NetSocket sockIn("127.0.0.1", 11111);
-    IStream* s1 = handler->newStream("out1",StreamType::Playback, StreamMapType::LeftChannel,&sockIn);
+    IStream* s1 = handler->newStream("playb1",StreamType::Playback, StreamMapType::LeftChannel,&sockIn);
     s1->resume();
 
     NetSocket sockSend("127.0.0.1", 22222);
-    IStream* s2 = handler->newStream("out1",StreamType::Recording, StreamMapType::LeftChannel,&sockSend);
+    IStream* s2 = handler->newStream("record1",StreamType::Recording, StreamMapType::LeftChannel,&sockSend);
 
     handler->connectConsumer(s2,s1);
 
