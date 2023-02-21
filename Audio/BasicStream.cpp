@@ -1,8 +1,9 @@
-#include <pulse/stream.h>
 #include <QCoreApplication>
+#include <pulse/stream.h>
+#include <pulse/thread-mainloop.h>
 
+#include "IHandler.h"
 #include "BasicStream.h"
-#include "PulseAudioHandler.h"
 #include "SampleSpecification.h"
 #include "MainLoopLocker.h"
 #include "Network/NetSocket.h"
@@ -10,9 +11,10 @@
 using namespace pulse;
 
 
-BasicStream::BasicStream(const QString &n, ContextPtr ctx, SampleSpecification* sample,
+BasicStream::BasicStream(IHandler* h, const QString &n, ContextPtr ctx, SampleSpecification* sample,
                          BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock)
     : IStream()
+    , m_handler(h)
     , m_name(n)
     , m_sock(sock)
     , m_context(ctx)
@@ -28,21 +30,26 @@ int BasicStream::initialize()
 {
     QString name = QCoreApplication::applicationName();
 
-    MainLoopLocker lock(PulseAudioHandler::instance().mainLoop());
+    MainLoopLocker lock(m_handler->mainLoop());
 
     m_stream = pa_stream_new(m_context, name.toLocal8Bit().data(), m_sampleSpec->get(), m_channelMap);
     pa_stream_set_state_callback(m_stream,
                                  streamStateCallBack,
-                                 &PulseAudioHandler::instance());
+                                 m_handler);
     return 0;
 }
 
 BasicStream::~BasicStream()
 {
-    MainLoopLocker lock(PulseAudioHandler::instance().mainLoop());
+    MainLoopLocker lock(m_handler->mainLoop());
 
     pa_stream_disconnect(m_stream);
     pa_stream_unref(m_stream);
+}
+
+MainLoopPtr BasicStream::mainLoop() const
+{
+    return m_handler->mainLoop();
 }
 
 QString BasicStream::name() const
@@ -73,7 +80,7 @@ void BasicStream::setSocket(NetSocket* sock)
 
 void BasicStream::streamStateCallBack(StreamPtr s, void *userData)
 {
-    PulseAudioHandler* handler =  static_cast<PulseAudioHandler*>(userData);
+    IHandler* handler =  static_cast<IHandler*>(userData);
     QString name = handler->nameByStream(s);
 
     switch(pa_stream_get_state(s))

@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include <QKeyEvent>
-#include "Audio/RecordingStream.h"
+#include "Audio/IStream.h"
 
 namespace Ui {
 class MainWindow;
@@ -14,9 +14,9 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    explicit MainWindow( pulse::RecordingStream* l = nullptr,
-                         pulse::RecordingStream* r = nullptr,
-                         pulse::RecordingStream* s = nullptr,
+    explicit MainWindow( pulse::IStream* l = nullptr,
+                         pulse::IStream* r = nullptr,
+                         pulse::IStream* s = nullptr,
                          QWidget *parent = nullptr );
     ~MainWindow();
 
@@ -33,9 +33,9 @@ private slots:
 private:
     Ui::MainWindow *ui;
 
-    pulse::RecordingStream* left;
-    pulse::RecordingStream* right;
-    pulse::RecordingStream* stereo;
+    pulse::IStream* left;
+    pulse::IStream* right;
+    pulse::IStream* stereo;
 };
 
 #endif // MAINWINDOW_H

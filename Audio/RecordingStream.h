@@ -9,7 +9,7 @@ namespace pulse
     class RecordingStream : public BasicStream
     {
     public:
-        explicit RecordingStream(const QString &n, ContextPtr ctx, SampleSpecification* sample,
+        explicit RecordingStream(IHandler* h, const QString &n, ContextPtr ctx, SampleSpecification* sample,
                                  BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock);
         ~RecordingStream();
 
@@ -28,6 +28,5 @@ namespace pulse
         Consumers m_consumers;
 
         AsyncKit    m_kit;
-
     };
 }

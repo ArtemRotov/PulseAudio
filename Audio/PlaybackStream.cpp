@@ -1,10 +1,12 @@
 #include <pulse/stream.h>
 #include <pulse/error.h>
+#include <pulse/thread-mainloop.h>
 #include <QDebug>
 #include <stdexcept>
+
+#include "IHandler.h"
 #include "PlaybackStream.h"
 #include "BufferAttributes.h"
-#include "PulseAudioHandler.h"
 #include "MainLoopLocker.h"
 #include "Settings/Settings.h"
 #include "Network/NetSocket.h"
@@ -12,12 +14,12 @@
 using namespace pulse;
 
 
-PlaybackStream::PlaybackStream(const QString &n, ContextPtr ctx, SampleSpecification* sample,
+PlaybackStream::PlaybackStream(IHandler* h, const QString &n, ContextPtr ctx, SampleSpecification* sample,
                                BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock)
-    : BasicStream(n, ctx, sample, buffAttr, map, sock)
+    : BasicStream(h, n, ctx, sample, buffAttr, map, sock)
     , m_mutex()
     , m_queueBuffer()
-    , m_kit(&m_queueBuffer, &m_mutex)
+    , m_kit(DataKit(&m_queueBuffer, &m_mutex), h)
 {
 
 }
@@ -26,7 +28,7 @@ int PlaybackStream::initialize()
 {
     BasicStream::initialize();
 
-    MainLoopLocker lock(PulseAudioHandler::instance().mainLoop());
+    MainLoopLocker lock(mainLoop());
 
     if (Settings::instance().value(Settings::usePlaybackAsyncAccessModel).toBool())
     {
@@ -57,7 +59,7 @@ int PlaybackStream::initialize()
             return 1;
     }
 
-    pa_threaded_mainloop_wait(PulseAudioHandler::instance().mainLoop());
+    pa_threaded_mainloop_wait(mainLoop());
     return 0;
 }
 
@@ -68,12 +70,12 @@ PlaybackStream::~PlaybackStream()
 
 void PlaybackStream::resume()
 {
-    pa_stream_cork(stream(), 0, 0, PulseAudioHandler::instance().mainLoop());
+    pa_stream_cork(stream(), 0, 0, mainLoop());
 }
 
 void PlaybackStream::pause()
 {
-    pa_stream_cork(stream(), 1, 0, PulseAudioHandler::instance().mainLoop());
+    pa_stream_cork(stream(), 1, 0, mainLoop());
 }
 
 void PlaybackStream::writePolledAccess()
@@ -85,7 +87,7 @@ void PlaybackStream::writePolledAccess()
     if (len <= 0)
         return;
 
-    MainLoopLocker lock(PulseAudioHandler::instance().mainLoop());
+    MainLoopLocker lock(mainLoop());
     size_t requestedBytes = pa_stream_writable_size(stream());
     if (len > requestedBytes)  len = requestedBytes;
 
@@ -113,13 +115,14 @@ void PlaybackStream::receiveData()
 
 void PlaybackStream::writeAsyncAccess(StreamPtr stream, size_t requestedBytes, void* kit)
 {
-    AsyncKit* params = static_cast<AsyncKit*>(kit);
+    AsyncKit* acynsKit = static_cast<AsyncKit*>(kit);
 
-    QQueue<uint8_t>* queueBuffer = params->first;
-    QMutex* mutex = params->second;
+    QQueue<uint8_t>* queueBuffer = acynsKit->first.first;
+    QMutex* mutex = acynsKit->first.second;
+    IHandler* handler = acynsKit->second;
 
     QMutexLocker lock(mutex);
-    MainLoopLocker lock2(PulseAudioHandler::instance().mainLoop());
+    MainLoopLocker lock2(handler->basicStreamByStream(stream)->mainLoop());
 
     if (queueBuffer->empty())
     {

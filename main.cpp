@@ -1,15 +1,9 @@
-#include <QSettings>
 #include <QApplication>
 #include <QDebug>
-#include <vector>
-#include <queue>
-#include <QThread>
-#include <mutex>
-#include <pulse/pulseaudio.h>
-#include "Network/NetSocket.h"
+
 #include "Audio/PulseAudioHandler.h"
-#include "Audio/RecordingStream.h"
-#include "Audio/PlaybackStream.h"
+#include "Network/NetSocket.h"
+
 #include "mainwindow.h"
 
 using namespace pulse;
@@ -20,18 +14,17 @@ int main(int argc, char *argv[])
     QApplication::setOrganizationName( "Vniira" );
     QApplication::setApplicationName( "RadioSim" );
 
-    PulseAudioHandler& pa =  PulseAudioHandler::instance();
+    IHandler* handler = newHandler();
 
     NetSocket sockIn("127.0.0.1", 11111);
-    PlaybackStream* stream1 = pa.createPlaybackStream("out1", StreamMapType::LeftChannel,&sockIn);
-    stream1->resume();
+    IStream* s1 = handler->newStream("out1",StreamType::Playback, StreamMapType::LeftChannel,&sockIn);
+    s1->resume();
 
     NetSocket sockSend("127.0.0.1", 22222);
-    RecordingStream* rstream1 = pa.createRecordingStream("in1", StreamMapType::StereoChannel, &sockSend);
-    rstream1->addConsumer("127.0.0.1",11111);
+    IStream* s2 = handler->newStream("out1",StreamType::Recording, StreamMapType::LeftChannel,&sockIn);
+    handler->connectConsumer(s2,s1);
 
-
-    MainWindow m(rstream1/*, rstream2, rstream3*/);
+    MainWindow m(s2);
 
     app.exec();
 }

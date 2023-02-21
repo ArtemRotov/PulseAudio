@@ -15,6 +15,9 @@ public:
 
     void setReceiveMethod(const ReceiveMethod &method);
 
+    QString address() const;
+    int     port() const;
+
 private slots:
     void error(QAbstractSocket::SocketError err );
 

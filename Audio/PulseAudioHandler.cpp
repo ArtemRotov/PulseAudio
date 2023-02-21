@@ -1,7 +1,7 @@
 #include <pulse/pulseaudio.h>
-#include <QObject>
-#include <QThread>
+
 #include "PulseAudioHandler.h"
+#include "Network/NetSocket.h"
 #include "MainLoopLocker.h"
 #include "Settings/Settings.h"
 #include "SampleSpecification.h"
@@ -11,8 +11,25 @@
 
 using namespace pulse;
 
+IHandler* pulse::newHandler()
+{
+    PulseAudioHandler* handler = nullptr;
+    try
+    {
+        handler = new PulseAudioHandler;
+        handler->initialize();
+    }
+    catch(...)
+    {
+        qDebug() << "Handler error";
+        return nullptr;
+    }
+
+    return handler;
+}
+
 PulseAudioHandler::PulseAudioHandler()
-    : QObject(nullptr)
+    : IHandler()
     , m_mainLoop(nullptr)
     , m_mainLoopApi(nullptr)
     , m_context(nullptr)
@@ -90,39 +107,72 @@ MainLoopPtr PulseAudioHandler::mainLoop() const
     return m_mainLoop;
 }
 
-RecordingStream* PulseAudioHandler::createRecordingStream(const QString &name, StreamMapType type, NetSocket* socket)
+IStream* PulseAudioHandler::newStream(const QString &name, StreamType type, StreamMapType mtype, NetSocket* socket)
 {
-    RecordingStream* stream = nullptr;
-    ChannelMapPtr m = nullptr;
+    IStream* stream = nullptr;
+    ChannelMapPtr cm = nullptr;
 
-    switch (type)
+    switch (mtype)
     {
     case StreamMapType::StereoChannel:
-        m = m_channelMapStereo;
+        cm = m_channelMapStereo;
         break;
 
     case StreamMapType::LeftChannel:
-        m = m_channelMapLeft;
+        cm = m_channelMapLeft;
         break;
 
     case StreamMapType::RightChannel:
-        m = m_channelMapRight;
+        cm = m_channelMapRight;
         break;
 
     default:
         std::runtime_error("Unrecognized channel map");
         break;
-    } 
+    }
 
-    stream = new RecordingStream(name, m_context, m_sampleSpec, m_bufferAttr, m, socket);
-    m_streams.push_back(stream);
+    switch (type)
+    {
+    case StreamType::Playback:
+        stream = new PlaybackStream(this, name, m_context, m_sampleSpec, m_bufferAttr, cm, socket);
+        break;
 
-    if (!stream->initialize())
+    case StreamType::Recording:
+        stream = new RecordingStream(this, name, m_context, m_sampleSpec, m_bufferAttr, cm, socket);
+        break;
+
+    default:
+        std::runtime_error("Unrecognized stream type");
+        break;
+    }
+
+    m_streams.push_back(dynamic_cast<BasicStream*>(stream));
+
+    if (!m_streams.back()->initialize())
         return stream;
     else
         m_streams.pop_back();
 
     return nullptr;
+}
+
+void PulseAudioHandler::connectConsumer(IStream* source, IStream* consumer)
+{
+    RecordingStream* rec = dynamic_cast<RecordingStream*>(source);
+    if (!rec)
+    {
+        qDebug() << "The source stream is not defined";
+        return;
+    }
+
+    PlaybackStream* plbck = dynamic_cast<PlaybackStream*>(consumer);
+    if (!plbck)
+    {
+        qDebug() << "The consumer stream is not defined";
+        return;
+    }
+
+    rec->addConsumer(plbck->socket()->address(), plbck->socket()->port());
 }
 
 QString PulseAudioHandler::nameByStream(StreamPtr s) const
@@ -136,49 +186,15 @@ QString PulseAudioHandler::nameByStream(StreamPtr s) const
     return QString();
 }
 
-PlaybackStream* PulseAudioHandler::createPlaybackStream(const QString &name, StreamMapType type, NetSocket* socket)
+BasicStream* PulseAudioHandler::basicStreamByStream(StreamPtr s) const
 {
-    PlaybackStream* stream = nullptr;
-    ChannelMapPtr m = nullptr;
-
-    switch (type)
+    for (BasicStream* stream : m_streams)
     {
-    case StreamMapType::StereoChannel:
-        m = m_channelMapStereo;
-        break;
-
-    case StreamMapType::LeftChannel:
-        m = m_channelMapLeft;
-        break;
-
-    case StreamMapType::RightChannel:
-        m = m_channelMapRight;
-        break;
-
-    default:
-        std::runtime_error("Unrecognized channel map");
-        break;
+        if (stream->stream() == s)
+            return stream;
     }
 
-    stream = new PlaybackStream(name, m_context, m_sampleSpec, m_bufferAttr, m, socket);
-    m_streams.push_back(stream);
-
-    if (!stream->initialize())
-        return stream;
-    else
-        m_streams.pop_back();
-
     return nullptr;
-}
-
-PulseAudioHandler& PulseAudioHandler::instance()
-{
-    static std::once_flag flag;
-    static PulseAudioHandler theSingleInstance;
-
-    std::call_once(flag, [&](){ theSingleInstance.initialize(); });
-
-    return theSingleInstance;
 }
 
 void PulseAudioHandler::stateChanged(ContextPtr context, void* userData)

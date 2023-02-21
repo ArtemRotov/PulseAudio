@@ -1,46 +1,41 @@
 #pragma once
-#include <QCoreApplication>
 #include <QDebug>
-#include "def.h"
 #include <pulse/thread-mainloop.h>
 
+#include "def.h"
+#include "IHandler.h"
 
 
 class NetSocket;
 
 namespace pulse
 {
+    IHandler* newHandler();
+
     class BasicStream;
     class RecordingStream;
     class PlaybackStream;
 
-    class PulseAudioHandler : public QObject
+    class PulseAudioHandler : public IHandler
     {
-        Q_OBJECT
-
-        // Singleton notation
-        PulseAudioHandler();
-        PulseAudioHandler(const PulseAudioHandler& );
-        PulseAudioHandler& operator=(const PulseAudioHandler& );
-
-        ~PulseAudioHandler();
-
         template <typename T>
         static void deviceInfo(ContextPtr context, const T* info, int eol, void *userData);
         static void stateChanged(ContextPtr context, void* userData);
 
     public:
-        static PulseAudioHandler& instance();
+        PulseAudioHandler();
+        ~PulseAudioHandler();
 
-        MainLoopPtr mainLoop() const;
+        void initialize() override;
+        MainLoopPtr mainLoop() const override;
 
-        QString nameByStream(StreamPtr s) const;
+        QString         nameByStream        (StreamPtr s) const override;
+        BasicStream*    basicStreamByStream (StreamPtr s) const override;
 
-        RecordingStream* createRecordingStream(const QString &name, StreamMapType type, NetSocket* socket);
-        PlaybackStream* createPlaybackStream(const QString &name, StreamMapType type, NetSocket* socket);
+        void connectConsumer(IStream* source, IStream* consumer) override;
+        IStream* newStream(const QString &name, StreamType type, StreamMapType mtype, NetSocket* socket) override;
 
     private:
-        void initialize();
         void doDeviceInfo();
         void initChannelMaps();
 

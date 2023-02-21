@@ -2,7 +2,7 @@
 #include "ui_mainwindow.h"
 
 
-MainWindow::MainWindow(pulse::RecordingStream* l, pulse::RecordingStream* r, pulse::RecordingStream* s, QWidget *parent)
+MainWindow::MainWindow(pulse::IStream* l, pulse::IStream* r, pulse::IStream* s, QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , left(l)

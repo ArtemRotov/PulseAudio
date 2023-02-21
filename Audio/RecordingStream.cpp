@@ -1,8 +1,9 @@
 #include <pulse/stream.h>
 #include <pulse/error.h>
+#include <pulse/thread-mainloop.h>
+
 #include "RecordingStream.h"
 #include "BufferAttributes.h"
-#include "PulseAudioHandler.h"
 #include "MainLoopLocker.h"
 #include "Settings/Settings.h"
 #include "Network/NetSocket.h"
@@ -10,9 +11,9 @@
 using namespace pulse;
 
 
-RecordingStream::RecordingStream(const QString &n, ContextPtr ctx, SampleSpecification* sample,
+RecordingStream::RecordingStream(IHandler* h, const QString &n, ContextPtr ctx, SampleSpecification* sample,
                                  BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock)
-    : BasicStream(n, ctx, sample, buffAttr, map, sock)
+    : BasicStream(h, n, ctx, sample, buffAttr, map, sock)
     , m_consumers()
     , m_kit(this, &m_consumers)
 {
@@ -23,7 +24,7 @@ int RecordingStream::initialize()
 {
     BasicStream::initialize();
 
-    MainLoopLocker lock(PulseAudioHandler::instance().mainLoop());
+    MainLoopLocker lock(mainLoop());
 
     if (Settings::instance().value(Settings::useRecordAsyncAccessModel).toBool())
         pa_stream_set_read_callback(stream(), RecordingStream::read, static_cast<void*>(&m_kit));
@@ -37,7 +38,7 @@ int RecordingStream::initialize()
         return 1;
     }
 
-    pa_threaded_mainloop_wait(PulseAudioHandler::instance().mainLoop());
+    pa_threaded_mainloop_wait(mainLoop());
     return 0;
 }
 
@@ -48,12 +49,12 @@ RecordingStream::~RecordingStream()
 
 void RecordingStream::resume()
 {
-    pa_stream_cork(stream(), 0, 0, PulseAudioHandler::instance().mainLoop());
+    pa_stream_cork(stream(), 0, 0, mainLoop());
 }
 
 void RecordingStream::pause()
 {
-    pa_stream_cork(stream(), 1, 0, PulseAudioHandler::instance().mainLoop());
+    pa_stream_cork(stream(), 1, 0, mainLoop());
 }
 
 void RecordingStream::read(StreamPtr stream, size_t nbytes, void* kit)

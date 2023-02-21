@@ -11,7 +11,7 @@ namespace pulse
     class PlaybackStream : public BasicStream
     {
     public:
-        explicit PlaybackStream(const QString &n, ContextPtr ctx, SampleSpecification* sample,
+        explicit PlaybackStream(IHandler* h, const QString &n, ContextPtr ctx, SampleSpecification* sample,
                                 BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock);
         ~PlaybackStream();
 
@@ -25,14 +25,13 @@ namespace pulse
 
     protected:
     private:
-        using AsyncKit = QPair<QQueue<uint8_t>*, QMutex*>;
+        using DataKit = QPair<QQueue<uint8_t>*, QMutex*>;
+        using AsyncKit = QPair<DataKit, IHandler*>;
 
         QMutex          m_mutex;
         QQueue<uint8_t> m_queueBuffer;
 
         AsyncKit        m_kit;
     };
-
-
 }
 

@@ -6,16 +6,20 @@ class NetSocket;
 
 namespace pulse
 {
+    class IHandler;
+
     class BasicStream : public IStream
     {
     public:
-        explicit BasicStream(const QString &n, ContextPtr ctx, SampleSpecification* sample,
+        explicit BasicStream(IHandler* h, const QString &n, ContextPtr ctx, SampleSpecification* sample,
                              BufferAttributes* buffAttr, ChannelMapPtr map, NetSocket* sock);
         ~BasicStream();
 
         QString name() const;
 
         virtual int initialize();
+
+        MainLoopPtr mainLoop() const;
 
         StreamPtr stream() const;
         BufferAttributes* bufferAttributes() const;
@@ -26,6 +30,8 @@ namespace pulse
     protected:
     private:
         static void streamStateCallBack(StreamPtr s, void *userData);
+
+        IHandler*               m_handler;
 
         QString                 m_name;
 

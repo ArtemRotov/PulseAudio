@@ -44,6 +44,7 @@ HEADERS +=                              \
     $$PWD/Audio/PlaybackStream.h        \
     $$PWD/Audio/RecordingStream.h       \
     $$PWD/def.h \
+    Audio/IHandler.h \
     mainwindow.h
 
 SOURCES +=                              \

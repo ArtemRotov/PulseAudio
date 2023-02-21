@@ -48,3 +48,13 @@ void NetSocket::error(QAbstractSocket::SocketError err )
 {
     qDebug() << "NetSocket error: " << err;
 }
+
+QString NetSocket::address() const
+{
+   return m_addr;
+}
+
+int NetSocket::port() const
+{
+    return m_port;
+}
