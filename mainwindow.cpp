@@ -64,3 +64,5 @@ void MainWindow::pbSReleased()
     if(stereo)
        stereo->pause();
 }
+
+
