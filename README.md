@@ -1,2 +1,4 @@
-# RadioSim
-Radio simulation based on PulseAudio
+### RadioSim
+Проект предоставляет упрощенные примитивы для работы с асинхронным API PulseAudio.
+
+Пример использования см в **main.cpp**
